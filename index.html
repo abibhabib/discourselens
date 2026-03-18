@@ -1,0 +1,2543 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DiscourseLens v4.2 — See What Text Really Means</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<style>
+:root{
+  --ink:#0f1923;--ink-soft:#2c3e50;--ink-muted:#6b7a8d;--ink-ghost:#a8b5c2;
+  --paper:#f8f7f4;--paper-warm:#f0ede6;--paper-card:#fff;
+  --teal:#0b7a75;--teal-light:#e0f5f4;--teal-mid:#3aafa9;
+  --gold:#c9820a;--gold-light:#fef3dc;
+  --rose:#b5334a;--rose-light:#fdeaed;
+  --violet:#5c3d8f;--violet-light:#ede8f8;
+  --green:#1a7a3c;--green-light:#e6f7ed;
+  --border:rgba(15,25,35,.09);--border-med:rgba(15,25,35,.16);
+  --shadow:0 2px 16px rgba(15,25,35,.07);--shadow-lg:0 8px 36px rgba(15,25,35,.13);
+  --r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.6;}
+header{background:var(--ink);padding:0 2rem;position:sticky;top:0;z-index:200;border-bottom:3px solid var(--teal);}
+.header-inner{max-width:1160px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px;}
+.logo{font-family:'Playfair Display',serif;font-size:21px;color:#fff;display:flex;align-items:center;gap:9px;}
+.logo-lens{width:20px;height:20px;border-radius:50%;border:2px solid var(--teal-mid);display:flex;align-items:center;justify-content:center;}
+.logo-inner{width:7px;height:7px;border-radius:50%;background:var(--teal-mid);}
+.logo-tagline{font-size:10px;font-family:'DM Mono',monospace;color:var(--ink-ghost);letter-spacing:.06em;margin-top:1px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.hdr-btn{padding:5px 12px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.hdr-btn:hover{background:rgba(255,255,255,.1);color:#fff;}
+.hero{background:var(--ink);color:#fff;padding:1.75rem 2rem 1.5rem;}
+.hero-inner{max-width:1160px;margin:0 auto;display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:end;}
+.hero h1{font-family:'Playfair Display',serif;font-size:clamp(22px,2.8vw,36px);line-height:1.15;letter-spacing:-.02em;margin-bottom:.45rem;}
+.hero h1 em{color:var(--teal-mid);font-style:italic;}
+.hero-sub{color:var(--ink-ghost);font-size:13px;max-width:560px;font-weight:300;}
+.hero-chips{display:flex;gap:4px;margin-top:.75rem;flex-wrap:wrap;}
+.chip{font-size:9px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:100px;border:1px solid rgba(58,175,169,.35);color:var(--teal-mid);letter-spacing:.04em;}
+.chip.v4{border-color:rgba(201,130,10,.5);color:#f0b429;}
+.hero-stats{display:flex;flex-direction:column;gap:5px;align-items:flex-end;}
+.live-stat{font-family:'DM Mono',monospace;font-size:10px;color:var(--ink-ghost);text-align:right;}
+.live-stat strong{color:var(--teal-mid);font-size:17px;display:block;font-weight:500;}
+main{max-width:1160px;margin:0 auto;padding:1.4rem 2rem;display:grid;grid-template-columns:300px 1fr;gap:1.3rem;align-items:start;}
+.sidebar{position:sticky;top:72px;max-height:calc(100vh - 80px);overflow-y:auto;}
+.card{background:var(--paper-card);border:1px solid var(--border);border-radius:var(--rl);padding:1.1rem;box-shadow:var(--shadow);margin-bottom:1rem;}
+.card-label{font-size:9.5px;font-family:'DM Mono',monospace;letter-spacing:.12em;color:var(--ink-muted);text-transform:uppercase;margin-bottom:.75rem;display:flex;align-items:center;gap:5px;}
+.card-label::before{content:'';width:3px;height:3px;background:var(--teal);border-radius:50%;}
+.seg{display:flex;background:var(--paper-warm);border-radius:var(--r);padding:3px;gap:2px;margin-bottom:.75rem;flex-wrap:wrap;}
+.seg-btn{flex:1;min-width:55px;padding:5px 7px;font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;border:none;background:transparent;border-radius:7px;cursor:pointer;color:var(--ink-muted);transition:all .15s;font-weight:500;}
+.seg-btn.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.09);}
+textarea{width:100%;min-height:130px;border:1px solid var(--border-med);border-radius:var(--r);padding:9px;font-family:'DM Mono',monospace;font-size:11.5px;color:var(--ink);background:var(--paper-warm);resize:vertical;transition:border-color .2s;line-height:1.7;}
+textarea:focus{outline:none;border-color:var(--teal);}
+.drop-zone{border:2px dashed var(--border-med);border-radius:var(--r);padding:1.25rem .8rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--paper-warm);}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--teal);background:var(--teal-light);}
+.drop-zone p{font-size:12px;color:var(--ink-soft);font-weight:500;}
+.drop-zone span{font-size:10.5px;color:var(--ink-muted);}
+.img-drop{border-color:rgba(201,130,10,.4);background:var(--gold-light);}
+.img-drop:hover{border-color:var(--gold);background:#fde8b0;}
+.ocr-preview{max-width:100%;border-radius:var(--r);margin-top:.5rem;border:1px solid var(--border);}
+.ocr-msg{font-size:11.5px;font-family:'DM Mono',monospace;color:var(--teal);margin-top:.4rem;text-align:center;}
+#file-input,#img-input{display:none;}
+.sw-box{margin-top:.6rem;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.sw-hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--paper-warm);cursor:pointer;user-select:none;}
+.sw-hdr span{font-size:11.5px;font-weight:500;color:var(--ink-soft);}
+.sw-body{padding:8px;display:none;}
+.sw-body.open{display:block;}
+.sw-tags{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px;max-height:60px;overflow-y:auto;}
+.sw-tag{font-size:10.5px;background:var(--teal-light);color:var(--teal);padding:2px 7px;border-radius:100px;display:flex;align-items:center;gap:3px;font-family:'DM Mono',monospace;}
+.sw-tag button{background:none;border:none;cursor:pointer;color:var(--teal);font-size:11px;padding:0;}
+.sw-add{display:flex;gap:4px;}
+.sw-add input{flex:1;font-size:11px;padding:4px 7px;border:1px solid var(--border-med);border-radius:5px;font-family:'DM Mono',monospace;background:white;color:var(--ink);}
+.sw-add input:focus{outline:none;border-color:var(--teal);}
+.sw-add button{padding:4px 9px;background:var(--teal);color:white;border:none;border-radius:5px;font-size:11px;cursor:pointer;font-weight:500;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:.6rem;}
+.mini-stat{background:var(--paper-warm);border-radius:var(--r);padding:7px 9px;border:1px solid var(--border);}
+.mini-stat label{font-size:8.5px;color:var(--ink-muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.07em;display:block;}
+.mini-stat strong{font-size:15px;font-weight:600;color:var(--ink);font-family:'DM Mono',monospace;}
+.analyze-btn{width:100%;padding:10px;background:var(--teal);color:white;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:8px;}
+.analyze-btn:hover{background:#085f5b;transform:translateY(-1px);box-shadow:0 4px 14px rgba(11,122,117,.3);}
+.feat-nav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1rem;}
+.feat-btn{padding:5px 12px;border-radius:100px;border:1px solid var(--border-med);background:white;font-family:'Plus Jakarta Sans',sans-serif;font-size:11.5px;font-weight:500;color:var(--ink-muted);cursor:pointer;transition:all .2s;}
+.feat-btn:hover{border-color:var(--teal);color:var(--teal);}
+.feat-btn.active{background:var(--ink);color:white;border-color:var(--ink);}
+.feat-btn.v4new{border-color:rgba(201,130,10,.45);color:var(--gold);}
+.feat-btn.v4new.active{background:var(--gold);color:white;border-color:var(--gold);}
+.feat-btn.spatial{border-color:rgba(92,61,143,.4);color:var(--violet);}
+.feat-btn.spatial.active{background:var(--violet);color:white;border-color:var(--violet);}
+.fpanel{display:none;animation:fadeUp .2s ease;}
+.fpanel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.panel-title{font-family:'Playfair Display',serif;font-size:18px;color:var(--ink);margin-bottom:.8rem;padding-bottom:.65rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pbadge{font-size:9.5px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:100px;font-weight:500;}
+.pb-v4{background:var(--gold-light);color:var(--gold);}
+.pb-sp{background:var(--violet-light);color:var(--violet);}
+.ctrl{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:.85rem;}
+input[type=text],input[type=number],select{padding:6px 10px;border:1px solid var(--border-med);border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;color:var(--ink);background:white;transition:border-color .2s;}
+input[type=text]:focus,select:focus{outline:none;border-color:var(--teal);}
+.go-btn{padding:6px 15px;background:var(--ink);color:white;border:none;border-radius:var(--r);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.go-btn:hover{background:var(--teal);}
+.exp-btn{padding:5px 10px;border:1px solid var(--border-med);border-radius:var(--r);background:white;font-size:11px;font-family:'Plus Jakarta Sans',sans-serif;font-weight:500;color:var(--ink-muted);cursor:pointer;transition:all .2s;}
+.exp-btn:hover{border-color:var(--teal);color:var(--teal);}
+.tbl-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead{background:var(--paper-warm);}
+th{font-size:9.5px;font-family:'DM Mono',monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-muted);padding:8px 11px;text-align:left;border-bottom:1px solid var(--border-med);white-space:nowrap;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--ink);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:rgba(11,122,117,.04);}
+.kwic-l{text-align:right;color:var(--ink-muted);font-family:'DM Mono',monospace;font-size:11.5px;}
+.kwic-k{background:var(--teal-light);color:var(--teal);font-weight:600;padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11.5px;}
+.kwic-r{color:var(--ink-muted);font-family:'DM Mono',monospace;font-size:11.5px;}
+.bar-row{display:flex;align-items:center;gap:6px;}
+.bar-track{flex:1;height:5px;background:var(--paper-warm);border-radius:3px;overflow:hidden;min-width:40px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .3s;}
+.bf-teal{background:linear-gradient(90deg,var(--teal-mid),var(--teal));}
+.bf-gold{background:linear-gradient(90deg,#f0b429,var(--gold));}
+.bf-rose{background:linear-gradient(90deg,#e06070,var(--rose));}
+.bf-violet{background:linear-gradient(90deg,#9b72d0,var(--violet));}
+.bf-green{background:linear-gradient(90deg,#4caf50,var(--green));}
+.rnk{font-family:'DM Mono',monospace;font-size:10.5px;color:var(--ink-ghost);min-width:20px;}
+.wrd{font-family:'DM Mono',monospace;font-weight:500;color:var(--ink);}
+.cnt{font-family:'DM Mono',monospace;font-size:11px;background:var(--paper-warm);padding:2px 7px;border-radius:100px;color:var(--ink-soft);}
+.res-count{font-size:11px;font-family:'DM Mono',monospace;color:var(--ink-muted);margin-bottom:6px;}
+.topics-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px;}
+.topic-card{background:white;border:1px solid var(--border);border-radius:var(--rl);padding:.85rem;transition:box-shadow .2s;}
+.topic-card:hover{box-shadow:var(--shadow-lg);}
+.topic-num{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--ink-muted);text-transform:uppercase;margin-bottom:4px;}
+.topic-seed{font-family:'Playfair Display',serif;font-size:15px;margin-bottom:6px;}
+.topic-words-wrap{display:flex;flex-wrap:wrap;gap:3px;}
+.topic-word{font-size:10.5px;background:var(--paper-warm);color:var(--ink-soft);padding:2px 7px;border-radius:100px;border:1px solid var(--border);font-family:'DM Mono',monospace;}
+.cloud-wrap{background:var(--paper-warm);border-radius:var(--r);border:1px solid var(--border);padding:1.25rem;display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;justify-content:center;min-height:180px;}
+.cloud-word{font-family:'Playfair Display',serif;cursor:default;transition:opacity .2s;line-height:1.3;}
+.cloud-word:hover{opacity:.6;}
+.chart-wrap{position:relative;height:250px;margin-top:.5rem;}
+.sent-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem;}
+.sent-card{border-radius:var(--r);padding:.85rem;text-align:center;border:1px solid var(--border);}
+.sent-card.pos{background:var(--teal-light);border-color:rgba(11,122,117,.2);}
+.sent-card.neg{background:var(--rose-light);border-color:rgba(181,51,74,.2);}
+.sent-card.neu{background:var(--paper-warm);}
+.sent-num{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;}
+.sent-num.pos{color:var(--teal);}.sent-num.neg{color:var(--rose);}.sent-num.neu{color:var(--ink-muted);}
+.sent-lbl{font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;}
+.sent-row{display:flex;gap:6px;align-items:flex-start;padding:7px 10px;border-radius:var(--r);margin-bottom:5px;border:1px solid var(--border);}
+.spill{font-size:9.5px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:100px;white-space:nowrap;font-weight:500;}
+.pill-pos{background:var(--teal-light);color:var(--teal);}
+.pill-neg{background:var(--rose-light);color:var(--rose);}
+.pill-neu{background:var(--paper-warm);color:var(--ink-muted);}
+.sent-txt{font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+.structure-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-bottom:.9rem;}
+.struct-seg{border-radius:var(--r);padding:.75rem;border:1px solid var(--border);}
+.struct-seg.awal{background:var(--teal-light);border-color:rgba(11,122,117,.2);}
+.struct-seg.tengah{background:var(--gold-light);border-color:rgba(201,130,10,.2);}
+.struct-seg.akhir{background:var(--violet-light);border-color:rgba(92,61,143,.2);}
+.struct-lbl{font-size:8.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+.struct-lbl.awal{color:var(--teal);}.struct-lbl.tengah{color:var(--gold);}.struct-lbl.akhir{color:var(--violet);}
+.struct-txt{font-size:12px;color:var(--ink-soft);line-height:1.5;}
+.framing-list{display:flex;flex-direction:column;gap:5px;}
+.framing-item{background:white;border:1px solid var(--border);border-radius:var(--r);padding:.75rem;}
+.framing-lbl{font-size:9.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.07em;color:var(--ink-muted);margin-bottom:3px;}
+.framing-val{font-size:12.5px;color:var(--ink);font-weight:500;}
+.framing-sub{font-size:11px;color:var(--ink-muted);margin-top:2px;}
+/* COMPARE */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:.9rem;}
+.compare-col{border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.compare-col-hd{padding:7px 11px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:500;text-transform:uppercase;letter-spacing:.07em;}
+.compare-col-hd.a{background:var(--teal-light);color:var(--teal);}
+.compare-col-hd.b{background:var(--violet-light);color:var(--violet);}
+.compare-col-body{padding:9px 11px;}
+.diff-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.diff-row:last-child{border-bottom:none;}
+.diff-only{font-size:10.5px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:100px;color:var(--rose);background:var(--rose-light);}
+/* NETWORK */
+#network-svg{width:100%;height:400px;background:var(--paper-warm);border-radius:var(--r);border:1px solid var(--border);}
+.link{stroke:var(--ink-ghost);stroke-opacity:.45;}
+/* HEATMAP */
+.hm-wrap{overflow-x:auto;}
+/* TIMELINE */
+.timeline{position:relative;padding-left:1.75rem;}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border-med);}
+.tl-item{position:relative;margin-bottom:1rem;padding-left:.6rem;}
+.tl-dot{position:absolute;left:-1.68rem;top:4px;width:11px;height:11px;border-radius:50%;border:2px solid var(--teal);background:white;}
+.tl-dot.neg{border-color:var(--rose);}.tl-dot.pos{border-color:var(--teal);background:var(--teal);}
+.tl-date{font-size:10.5px;font-family:'DM Mono',monospace;color:var(--teal);font-weight:500;margin-bottom:1px;}
+.tl-txt{font-size:12.5px;color:var(--ink-soft);line-height:1.5;}
+/* GEO */
+.geo-wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.geo-map-area{background:var(--paper-warm);border:1px solid var(--border);border-radius:var(--r);padding:.9rem;}
+.geo-map-lbl{font-size:9.5px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-muted);margin-bottom:.7rem;}
+.geo-list-area{background:var(--paper-warm);border:1px solid var(--border);border-radius:var(--r);padding:.9rem;}
+.geo-item{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+.geo-item:last-child{border-bottom:none;}
+.geo-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.geo-name{font-weight:500;color:var(--ink);flex:1;}
+.geo-cnt{font-family:'DM Mono',monospace;font-size:11px;color:var(--ink-muted);}
+/* ── NEW: ANOTASI ── */
+.annot-toolbar{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:.9rem;padding:.7rem;background:var(--paper-warm);border-radius:var(--r);border:1px solid var(--border);}
+.annot-label-btn{padding:4px 12px;border-radius:100px;border:1.5px solid transparent;font-size:11.5px;font-family:'DM Mono',monospace;cursor:pointer;font-weight:500;transition:all .15s;}
+.annot-label-btn.sel{box-shadow:0 0 0 2px var(--ink);}
+.annot-text-area{font-family:'DM Mono',monospace;font-size:13px;line-height:2;padding:1rem;background:white;border:1px solid var(--border);border-radius:var(--r);min-height:200px;cursor:text;user-select:text;}
+.annot-span{border-radius:3px;padding:1px 3px;cursor:pointer;position:relative;}
+.annot-list{margin-top:.9rem;display:flex;flex-direction:column;gap:5px;}
+.annot-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r);background:white;font-size:12.5px;}
+.annot-tag{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:100px;font-weight:500;white-space:nowrap;flex-shrink:0;}
+.annot-txt{color:var(--ink-soft);flex:1;line-height:1.5;}
+.annot-del{background:none;border:none;cursor:pointer;color:var(--ink-ghost);font-size:14px;line-height:1;}
+.annot-del:hover{color:var(--rose);}
+/* ── NEW: KEYNESS ── */
+.keyness-info{background:var(--teal-light);border:1px solid rgba(11,122,117,.2);border-radius:var(--r);padding:9px 12px;font-size:12px;color:var(--ink-soft);margin-bottom:.9rem;}
+.key-pos{color:var(--teal);font-weight:600;}
+.key-neg{color:var(--rose);font-weight:600;}
+/* ── NEW: NER ── */
+.ner-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.9rem;}
+.ner-cat-card{background:var(--paper-warm);border:1px solid var(--border);border-radius:var(--r);padding:8px 12px;flex:1;min-width:120px;text-align:center;}
+.ner-cat-num{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;}
+.ner-cat-lbl{font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;}
+.ner-entity{display:inline-flex;align-items:center;gap:4px;margin:3px;padding:3px 9px;border-radius:100px;font-size:12px;font-family:'DM Mono',monospace;border:1px solid transparent;}
+.ner-person{background:#e8f4fd;color:#1565c0;border-color:#90caf9;}
+.ner-org{background:var(--gold-light);color:var(--gold);border-color:#f9c95c;}
+.ner-place{background:var(--green-light);color:var(--green);border-color:#81c784;}
+.ner-time{background:var(--violet-light);color:var(--violet);border-color:#ce93d8;}
+.ner-cnt{font-size:9.5px;background:rgba(0,0,0,.08);padding:1px 5px;border-radius:100px;margin-left:2px;}
+/* ── NEW: POS TAGGING ── */
+.pos-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:7px;margin-bottom:.9rem;}
+.pos-card{background:white;border:1px solid var(--border);border-radius:var(--r);padding:.75rem;text-align:center;}
+.pos-num{font-size:20px;font-weight:600;font-family:'DM Mono',monospace;}
+.pos-tag{font-size:9.5px;font-family:'DM Mono',monospace;padding:2px 7px;border-radius:100px;font-weight:500;margin-bottom:3px;display:inline-block;}
+.pos-lbl{font-size:11px;color:var(--ink-muted);}
+.pos-tagged-text{font-family:'DM Mono',monospace;font-size:12.5px;line-height:2.1;padding:1rem;background:var(--paper-warm);border:1px solid var(--border);border-radius:var(--r);max-height:400px;overflow-y:auto;}
+.pos-token{cursor:default;position:relative;}
+.pos-token sup{font-size:8px;font-family:'DM Mono',monospace;padding:1px 3px;border-radius:2px;margin-left:1px;vertical-align:super;}
+/* ── NEW: SESSION HISTORY ── */
+.sess-item{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border:0.5px solid var(--border);border-radius:6px;margin-bottom:4px;background:white;gap:6px;}
+.sess-info{flex:1;min-width:0;}
+.sess-name{font-size:11px;font-weight:500;color:var(--ink);font-family:'DM Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sess-meta{font-size:10px;color:var(--ink-muted);}
+.sess-load{padding:3px 8px;font-size:10.5px;background:var(--teal);color:white;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;}
+.sess-del{padding:3px 6px;font-size:11px;background:none;border:0.5px solid var(--border);border-radius:4px;cursor:pointer;color:var(--ink-muted);}
+.sess-del:hover{color:var(--rose);border-color:var(--rose);}
+/* ── NEW: READABILITY ── */
+.read-scores{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:1rem;}
+.read-score-card{background:white;border:1px solid var(--border);border-radius:var(--r);padding:.85rem;text-align:center;}
+.read-score-num{font-size:24px;font-weight:600;font-family:'DM Mono',monospace;color:var(--teal);}
+.read-score-lbl{font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.06em;margin-top:2px;}
+.read-score-desc{font-size:11px;color:var(--ink-soft);margin-top:4px;}
+/* ── NEW: DISPERSION ── */
+.disp-wrap{overflow-x:auto;}
+.disp-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.disp-label{font-size:11.5px;font-family:'DM Mono',monospace;color:var(--ink);min-width:100px;text-align:right;}
+.disp-track{flex:1;height:18px;background:var(--paper-warm);border-radius:3px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.disp-mark{position:absolute;top:2px;bottom:2px;width:3px;border-radius:1px;background:var(--teal);}
+/* ── NEW: SESSION SAVE ── */
+.session-row{display:flex;gap:5px;margin-top:.6rem;}
+.session-btn{flex:1;padding:5px 8px;font-size:11px;font-family:'DM Mono',monospace;border:1px solid var(--border-med);border-radius:var(--r);background:white;color:var(--ink-muted);cursor:pointer;transition:all .15s;}
+.session-btn:hover{border-color:var(--teal);color:var(--teal);}
+/* EMPTY */
+.empty{text-align:center;padding:2rem 1rem;color:var(--ink-muted);}
+.empty .ico{font-size:28px;margin-bottom:7px;}
+.empty p{font-size:13px;}
+.info-box{background:var(--gold-light);border:1px solid rgba(201,130,10,.25);border-radius:var(--r);padding:9px 12px;font-size:12px;color:var(--ink-soft);margin-bottom:.75rem;line-height:1.6;}
+.embed-code{background:var(--ink);color:#7fdbca;border-radius:var(--r);padding:9px 12px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.8;margin-top:.6rem;user-select:all;cursor:text;}
+footer{border-top:1px solid var(--border);padding:1.1rem 2rem;text-align:center;font-size:10.5px;color:var(--ink-muted);font-family:'DM Mono',monospace;margin-top:1.5rem;}
+footer strong{color:var(--teal);}
+@media(max-width:800px){main{grid-template-columns:1fr;padding:1rem;}.sidebar{position:static;max-height:none;}.hero-inner{grid-template-columns:1fr;}.hero-stats{display:none;}.compare-grid,.geo-wrap,.structure-bar{grid-template-columns:1fr;}}
+::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:var(--paper-warm);}::-webkit-scrollbar-thumb{background:var(--ink-ghost);border-radius:2px;}
+
+/* ── AUTH OVERLAY ───────────────────────────────────── */
+#auth-overlay{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:1rem;}
+.auth-wrap{width:100%;max-width:420px;animation:authIn .35s cubic-bezier(.22,1,.36,1);}
+@keyframes authIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.auth-brand{text-align:center;margin-bottom:1.5rem;}
+.auth-brand-logo{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:.5rem;}
+.auth-brand-lens{width:28px;height:28px;border-radius:50%;border:2.5px solid var(--teal-mid);display:flex;align-items:center;justify-content:center;}
+.auth-brand-inner{width:9px;height:9px;border-radius:50%;background:var(--teal-mid);}
+.auth-brand-name{font-family:'Playfair Display',serif;font-size:26px;color:#fff;}
+.auth-brand-tag{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.12em;}
+.auth-card{background:var(--paper-card);border-radius:18px;padding:1.75rem 2rem;box-shadow:0 24px 64px rgba(0,0,0,.35);}
+.auth-tabs{display:flex;background:var(--paper-warm);border-radius:10px;padding:3px;gap:3px;margin-bottom:1.5rem;}
+.auth-tab{flex:1;padding:8px;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;border:none;background:transparent;border-radius:8px;cursor:pointer;color:var(--ink-muted);font-weight:500;transition:all .15s;}
+.auth-tab.active{background:white;color:var(--ink);box-shadow:0 1px 5px rgba(0,0,0,.1);}
+.auth-form-group{margin-bottom:1rem;}
+.auth-label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:.35rem;letter-spacing:.02em;}
+.auth-input{width:100%;padding:10px 13px;border:1.5px solid var(--border-med);border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;color:var(--ink);background:var(--paper-warm);transition:all .2s;outline:none;}
+.auth-input:focus{border-color:var(--teal);background:white;box-shadow:0 0 0 3px rgba(11,122,117,.1);}
+.auth-input-wrap{position:relative;}
+.auth-pw-btn{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-muted);font-size:15px;padding:4px;}
+.auth-btn{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;margin-top:.25rem;}
+.auth-btn-primary{background:var(--teal);color:white;}
+.auth-btn-primary:hover{background:#085f5b;transform:translateY(-1px);}
+.auth-btn-primary:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+.auth-msg{padding:10px 13px;border-radius:9px;font-size:12.5px;margin-bottom:1rem;display:none;line-height:1.5;}
+.auth-msg.show{display:block;}
+.auth-msg.error{background:var(--rose-light);color:var(--rose);border:1px solid rgba(181,51,74,.2);}
+.auth-msg.success{background:var(--teal-light);color:var(--teal);border:1px solid rgba(11,122,117,.2);}
+.auth-msg.info{background:var(--gold-light);color:var(--gold);border:1px solid rgba(201,130,10,.2);}
+.auth-divider{text-align:center;font-size:11.5px;color:var(--ink-muted);margin:.75rem 0;display:flex;align-items:center;gap:.5rem;}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.auth-footnote{text-align:center;font-size:11.5px;color:var(--ink-muted);margin-top:.9rem;line-height:1.6;}
+.auth-link{color:var(--teal);cursor:pointer;font-weight:500;}
+.auth-link:hover{text-decoration:underline;}
+/* pw strength */
+.auth-pw-strength{height:3px;border-radius:2px;background:var(--paper-warm);margin-top:.35rem;overflow:hidden;}
+.auth-pw-bar{height:100%;border-radius:2px;width:0;transition:width .3s,background .3s;}
+.auth-pw-hint{font-size:10.5px;color:var(--ink-muted);margin-top:.25rem;}
+/* user badge di header */
+.user-badge{display:flex;align-items:center;gap:7px;padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:100px;background:rgba(255,255,255,.06);}
+.user-avatar{width:22px;height:22px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:white;font-family:'DM Mono',monospace;}
+.user-name{font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.75);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-plan{font-size:9px;padding:1px 6px;border-radius:100px;font-family:'DM Mono',monospace;font-weight:500;}
+.plan-free{background:rgba(255,255,255,.12);color:rgba(255,255,255,.6);}
+.plan-pro{background:rgba(11,122,117,.3);color:var(--teal-mid);}
+.plan-premium{background:rgba(92,61,143,.3);color:#a78bda;}
+.btn-logout{padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:6px;background:transparent;color:rgba(255,255,255,.5);font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s;}
+.btn-logout:hover{border-color:var(--rose);color:var(--rose);}
+/* ── LANGUAGE SWITCHER ── */
+.lang-switcher{display:flex;border:1px solid rgba(255,255,255,.18);border-radius:100px;overflow:hidden;flex-shrink:0;}
+.lang-btn{padding:4px 10px;font-size:10.5px;font-family:'DM Mono',monospace;font-weight:500;background:transparent;border:none;color:rgba(255,255,255,.45);cursor:pointer;transition:all .15s;letter-spacing:.03em;}
+.lang-btn.active{background:var(--teal);color:#fff;}
+.lang-btn:hover:not(.active){background:rgba(255,255,255,.1);color:#fff;}
+/* toast notif */
+.auth-toast{position:fixed;bottom:1.25rem;right:1.25rem;background:var(--ink);color:white;padding:.65rem 1.1rem;border-radius:10px;font-size:12.5px;font-family:'DM Mono',monospace;z-index:99999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;border-left:3px solid var(--teal);}
+.auth-toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ── AUTH OVERLAY ─────────────────────────────────── -->
+<div id="auth-overlay">
+  <div class="auth-wrap">
+    <div class="auth-brand">
+      <div class="auth-brand-logo">
+        <div class="auth-brand-lens"><div class="auth-brand-inner"></div></div>
+        <div class="auth-brand-name">DiscourseLens</div>
+      </div>
+      <div class="auth-brand-tag">SEE WHAT TEXT REALLY MEANS · v4.2</div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="authSwitchTab('login')">Masuk</button>
+        <button class="auth-tab" id="tab-register" onclick="authSwitchTab('register')">Daftar</button>
+      </div>
+      <div id="auth-msg" class="auth-msg"></div>
+
+      <!-- FORM LOGIN -->
+      <form id="form-login" onsubmit="authLogin(event)">
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_email">Email</label>
+          <input class="auth-input" id="li-email" type="email" placeholder="email@kamu.com" required autocomplete="email">
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_pass">Password</label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" id="li-pass" type="password" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="auth-pw-btn" onclick="authTogglePw('li-pass',this)">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-btn auth-btn-primary" id="btn-li" data-i18n="auth_btn_login">Masuk ke DiscourseLens</button>
+        <div class="auth-footnote">
+          <span class="auth-link" onclick="authSwitchTab('forgot')" data-i18n="auth_forgot_link">Lupa password?</span>
+        </div>
+      </form>
+
+      <!-- FORM REGISTER -->
+      <form id="form-register" style="display:none" onsubmit="authRegister(event)">
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_name">Nama Lengkap</label>
+          <input class="auth-input" id="re-name" type="text" placeholder="Nama kamu" required autocomplete="name">
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_email">Email</label>
+          <input class="auth-input" id="re-email" type="email" placeholder="email@kamu.com" required autocomplete="email">
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_pass">Password</label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" id="re-pass" type="password" placeholder="Min. 8 karakter" required autocomplete="new-password" oninput="authCheckPw(this.value)">
+            <button type="button" class="auth-pw-btn" onclick="authTogglePw('re-pass',this)">👁</button>
+          </div>
+          <div class="auth-pw-strength"><div class="auth-pw-bar" id="pw-bar"></div></div>
+          <div class="auth-pw-hint" id="pw-hint" data-i18n="auth_pw_hint">Minimal 8 karakter, ada huruf kapital & angka</div>
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_confirm">Konfirmasi Password</label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" id="re-confirm" type="password" placeholder="Ulangi password" required autocomplete="new-password">
+            <button type="button" class="auth-pw-btn" onclick="authTogglePw('re-confirm',this)">👁</button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--ink-muted);margin-bottom:.75rem;line-height:1.6;" data-i18n="auth_terms">Dengan mendaftar, kamu menyetujui penggunaan platform ini untuk keperluan penelitian.</p>
+        <button type="submit" class="auth-btn auth-btn-primary" id="btn-re" data-i18n="auth_btn_register">Daftar Sekarang</button>
+        <div class="auth-footnote"><span data-i18n="auth_have_account">Sudah punya akun?</span> <span class="auth-link" onclick="authSwitchTab('login')" data-i18n="auth_tab_login">Masuk</span></div>
+      </form>
+
+      <!-- FORM LUPA PASSWORD -->
+      <form id="form-forgot" style="display:none" onsubmit="authForgot(event)">
+        <p style="font-size:13px;color:var(--ink-muted);margin-bottom:1rem;line-height:1.6;" data-i18n="auth_forgot_sub">Masukkan email terdaftar kamu. Kami akan kirim link reset ke email kamu.</p>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_email">Email</label>
+          <input class="auth-input" id="fo-email" type="email" placeholder="email@kamu.com" required>
+        </div>
+        <button type="submit" class="auth-btn auth-btn-primary" id="btn-forgot" data-i18n="auth_btn_forgot">Kirim Link Reset</button>
+        <div class="auth-footnote"><span class="auth-link" onclick="authSwitchTab('login')" data-i18n="auth_back_login">← Kembali ke login</span></div>
+      </form>
+
+      <!-- FORM RESET PASSWORD BARU (muncul jika URL mengandung ?reset=TOKEN) -->
+      <form id="form-reset" style="display:none" onsubmit="authConfirmReset(event)">
+        <div style="text-align:center;margin-bottom:1rem;">
+          <div style="font-size:28px;margin-bottom:6px;">🔐</div>
+          <p style="font-size:13.5px;font-weight:600;color:var(--ink);margin:0;" id="reset-greeting">Buat Password Baru</p>
+          <p style="font-size:12px;color:var(--ink-muted);margin:4px 0 0;" id="reset-sub">Masukkan password baru untuk akunmu.</p>
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_pass">Password Baru</label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" id="rs-pass" type="password" placeholder="Min. 8 karakter" required autocomplete="new-password" oninput="authCheckPw(this.value)">
+            <button type="button" class="auth-pw-btn" onclick="authTogglePw('rs-pass',this)">👁</button>
+          </div>
+          <div class="auth-pw-strength"><div class="auth-pw-bar" id="pw-bar"></div></div>
+          <div class="auth-pw-hint" id="pw-hint">Minimal 8 karakter, ada huruf kapital & angka</div>
+        </div>
+        <div class="auth-form-group">
+          <label class="auth-label" data-i18n="auth_label_confirm">Konfirmasi Password</label>
+          <div class="auth-input-wrap">
+            <input class="auth-input" id="rs-confirm" type="password" placeholder="Ulangi password baru" required autocomplete="new-password">
+            <button type="button" class="auth-pw-btn" onclick="authTogglePw('rs-confirm',this)">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="auth-btn auth-btn-primary" id="btn-reset">Simpan Password Baru</button>
+      </form>
+    </div>
+    <p style="text-align:center;font-size:10.5px;color:rgba(255,255,255,.25);margin-top:1rem;font-family:'DM Mono',monospace;">Data tersimpan aman di Google Sheets · Tidak ada tracking</p>
+  </div>
+</div>
+
+<!-- TOAST NOTIFIKASI -->
+<div id="auth-toast" class="auth-toast"></div>
+
+<header>
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:9px;">
+      <div class="logo-lens"><div class="logo-inner"></div></div>
+      <div><div class="logo">DiscourseLens</div><div class="logo-tagline" data-i18n="tagline">SEE WHAT TEXT REALLY MEANS · v4.2</div></div>
+    </div>
+    <div class="header-right">
+      <!-- User badge (muncul setelah login) -->
+      <div id="user-badge-wrap" style="display:none;" class="user-badge">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div>
+          <div class="user-name" id="user-name-lbl">—</div>
+          <div><span class="user-plan plan-free" id="user-plan-lbl">FREE</span></div>
+        </div>
+      </div>
+      <button class="hdr-btn" onclick="saveSession()" data-i18n="btn_save_session">💾 Simpan Sesi</button>
+      <button class="hdr-btn" onclick="loadSession()" data-i18n="btn_load_session">📂 Muat Sesi</button>
+      <button class="hdr-btn" onclick="exportFullReport()" style="border-color:rgba(201,130,10,.5);color:#f0b429;" data-i18n="btn_report">📄 Ekspor Laporan</button>
+      <button class="btn-logout" id="btn-logout" style="display:none;" onclick="authLogout()" data-i18n="btn_logout">Keluar</button>
+      <!-- Language Switcher -->
+      <div class="lang-switcher" id="lang-switcher">
+        <button class="lang-btn active" id="lang-id" onclick="setLang('id')">🇮🇩 ID</button>
+        <button class="lang-btn" id="lang-en" onclick="setLang('en')">🇬🇧 EN</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <h1 data-i18n="hero_title">Analisis korpus digital<br>untuk <em>penelitian AWK</em></h1>
+      <p class="hero-sub" data-i18n="hero_sub">Platform analisis wacana kritis terlengkap — KWIC, kolokasi, keyness, anotasi, NER, topik, sentimen, narasi, spasial, dan ekspor laporan otomatis.</p>
+      <div class="hero-chips">
+        <span class="chip">KWIC</span><span class="chip">N-GRAM</span><span class="chip">KOLOKASI</span><span class="chip">TOPIK</span><span class="chip">SENTIMEN</span><span class="chip">NARASI</span><span class="chip">OCR</span><span class="chip">KOMPARASI</span>
+        <span class="chip v4">ANOTASI</span><span class="chip v4">KEYNESS</span><span class="chip v4">NER</span><span class="chip v4">POS TAG</span><span class="chip v4">LAPORAN</span><span class="chip v4">KETERBACAAN</span><span class="chip v4">DISPERSI</span><span class="chip v4">HISTORI SESI</span>
+      </div>
+    </div>
+    <div class="hero-stats">
+      <div class="live-stat"><strong id="hs-tok">—</strong>token</div>
+      <div class="live-stat"><strong id="hs-typ">—</strong>tipe</div>
+      <div class="live-stat"><strong id="hs-ttr">—</strong>TTR</div>
+    </div>
+  </div>
+</div>
+
+<main>
+<aside class="sidebar">
+  <div class="card">
+    <div class="card-label" data-i18n="label_input">Input korpus</div>
+    <div class="seg">
+      <button class="seg-btn active" onclick="switchInput('paste')" data-i18n="tab_text">Teks</button>
+      <button class="seg-btn" onclick="switchInput('upload')" data-i18n="tab_file">File</button>
+      <button class="seg-btn" onclick="switchInput('ocr')" style="color:var(--gold)" data-i18n="tab_image">Gambar</button>
+      <button class="seg-btn" onclick="switchInput('compare')" style="color:var(--violet)" data-i18n="tab_compare">Bandingkan</button>
+    </div>
+    <div id="paste-panel">
+      <textarea id="corpus-text" data-i18n-placeholder="placeholder_corpus" placeholder="Tempel teks korpus di sini..."></textarea>
+    </div>
+    <div id="upload-panel" style="display:none">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div style="font-size:22px;margin-bottom:4px;">📄</div>
+        <p>Klik atau seret file</p><span>.txt atau .csv</span>
+      </div>
+      <input type="file" id="file-input" accept=".txt,.csv">
+    </div>
+    <div id="ocr-panel" style="display:none">
+      <div class="info-box">OCR via Tesseract.js. Terbaik untuk teks cetak jelas.</div>
+      <div class="drop-zone img-drop" id="img-drop" onclick="document.getElementById('img-input').click()">
+        <div style="font-size:22px;margin-bottom:4px;">🖼</div>
+        <p>Upload gambar OCR</p><span>.jpg .png .webp</span>
+      </div>
+      <input type="file" id="img-input" accept="image/*">
+      <div id="ocr-status"></div>
+    </div>
+    <div id="compare-panel" style="display:none">
+      <p style="font-size:11.5px;color:var(--ink-muted);margin-bottom:.4rem;">Korpus A</p>
+      <textarea id="corpus-a" placeholder="Tempel Korpus A..." style="min-height:80px;margin-bottom:.4rem;"></textarea>
+      <p style="font-size:11.5px;color:var(--ink-muted);margin-bottom:.4rem;">Korpus B</p>
+      <textarea id="corpus-b" placeholder="Tempel Korpus B..." style="min-height:80px;"></textarea>
+    </div>
+    <div class="sw-box">
+      <div class="sw-hdr" onclick="toggleSW()"><span>⚙ Stopwords kustom</span><span id="sw-arrow">▸</span></div>
+      <div class="sw-body" id="sw-body">
+        <div class="sw-tags" id="sw-tags"></div>
+        <div class="sw-add">
+          <input type="text" id="sw-input" placeholder="Tambah kata..." onkeydown="if(event.key==='Enter')addSW()">
+          <button onclick="addSW()">+</button>
+        </div>
+        <button onclick="resetSW()" style="margin-top:4px;font-size:10.5px;color:var(--ink-muted);background:none;border:1px solid var(--border);padding:2px 7px;border-radius:5px;cursor:pointer;">Reset default</button>
+      </div>
+    </div>
+    <div class="stats-grid" id="stats-grid" style="display:none">
+      <div class="mini-stat"><label>Token</label><strong id="s-tok">0</strong></div>
+      <div class="mini-stat"><label>Tipe</label><strong id="s-typ">0</strong></div>
+      <div class="mini-stat"><label>Kalimat</label><strong id="s-sent">0</strong></div>
+      <div class="mini-stat"><label>TTR %</label><strong id="s-ttr">0</strong></div>
+    </div>
+    <button class="analyze-btn" onclick="analyzeCorpus()">Mulai analisis →</button>
+    <div class="session-row">
+      <button class="session-btn" onclick="saveSession()" data-i18n="btn_save_session">💾 Simpan sesi</button>
+      <button class="session-btn" onclick="loadSession()" data-i18n="btn_load_session">📂 Muat sesi</button>
+    </div>
+    <div id="session-history-box" style="display:none;margin-top:.6rem;">
+      <div style="font-size:9.5px;font-family:'DM Mono',monospace;letter-spacing:.1em;color:var(--ink-muted);text-transform:uppercase;margin-bottom:.4rem;">Histori Sesi Tersimpan</div>
+      <div id="session-history-list"></div>
+    </div>
+  </div>
+  <div class="card" id="embed-card" style="display:none">
+    <div class="card-label">Embed ke website</div>
+    <div class="embed-code">&lt;iframe src="discourse-lens-v4.html"<br>  width="100%" height="750"<br>  frameborder="0"&gt;&lt;/iframe&gt;</div>
+  </div>
+</aside>
+
+<section id="results">
+  <div id="welcome" class="card" style="text-align:center;padding:2.25rem 1rem;">
+    <div style="font-size:38px;margin-bottom:.7rem;">🔍</div>
+    <h2 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:6px;">DiscourseLens v4</h2>
+    <p style="color:var(--ink-muted);font-size:12.5px;max-width:260px;margin:0 auto;">Masukkan teks atau upload file, lalu tekan <strong>Mulai analisis</strong>.</p>
+  </div>
+  <div id="analysis-ui" style="display:none">
+    <nav class="feat-nav">
+      <button class="feat-btn active" onclick="switchFeat('kwic',this)" data-i18n="feat_kwic">Konkordansi</button>
+      <button class="feat-btn" onclick="switchFeat('freq',this)" data-i18n="feat_freq">Frekuensi</button>
+      <button class="feat-btn" onclick="switchFeat('cloud',this)" data-i18n="feat_cloud">Word Cloud</button>
+      <button class="feat-btn" onclick="switchFeat('colloc',this)" data-i18n="feat_colloc">Kolokasi</button>
+      <button class="feat-btn" onclick="switchFeat('topic',this)" data-i18n="feat_topic">Topik</button>
+      <button class="feat-btn" onclick="switchFeat('sentiment',this)" data-i18n="feat_sentiment">Sentimen</button>
+      <button class="feat-btn" onclick="switchFeat('narasi',this)" data-i18n="feat_narasi">Narasi</button>
+      <button class="feat-btn v4new" onclick="switchFeat('annot',this)" data-i18n="feat_annot">Anotasi</button>
+      <button class="feat-btn v4new" onclick="switchFeat('keyness',this)" data-i18n="feat_keyness">Keyness</button>
+      <button class="feat-btn v4new" onclick="switchFeat('ner',this)" data-i18n="feat_ner">NER / Entitas</button>
+      <button class="feat-btn v4new" onclick="switchFeat('pos',this)" data-i18n="feat_pos">POS Tagging</button>
+      <button class="feat-btn v4new" onclick="switchFeat('readability',this)" data-i18n="feat_readability">Keterbacaan</button>
+      <button class="feat-btn v4new" onclick="switchFeat('dispersion',this)" data-i18n="feat_dispersion">Dispersi</button>
+      <button class="feat-btn" onclick="switchFeat('compare',this)" data-i18n="feat_compare">Komparasi</button>
+      <button class="feat-btn spatial" onclick="switchFeat('network',this)" data-i18n="feat_network">Network</button>
+      <button class="feat-btn spatial" onclick="switchFeat('heatmap',this)" data-i18n="feat_heatmap">Heatmap</button>
+      <button class="feat-btn spatial" onclick="switchFeat('timeline',this)" data-i18n="feat_timeline">Timeline</button>
+      <button class="feat-btn spatial" onclick="switchFeat('geo',this)" data-i18n="feat_geo">Peta Geo</button>
+    </nav>
+
+    <!-- KWIC -->
+    <div id="kwic-panel" class="fpanel active card">
+      <div class="panel-title">Konkordansi (KWIC)</div>
+      <div class="ctrl">
+        <input type="text" id="kwic-word" placeholder="Kata kunci..." style="flex:1;min-width:90px">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Win:</label>
+        <input type="number" id="kwic-win" value="5" min="1" max="15" style="width:50px">
+        <button class="go-btn" onclick="runKWIC()">Cari</button>
+        <button class="exp-btn" onclick="exportCSV('kwic')">↓ CSV</button>
+      </div>
+      <div id="kwic-out"></div>
+    </div>
+
+    <!-- FREQ -->
+    <div id="freq-panel" class="fpanel card">
+      <div class="panel-title">Frekuensi &amp; N-gram</div>
+      <div class="ctrl">
+        <select id="freq-n" style="flex:1"><option value="1">Unigram</option><option value="2">Bigram</option><option value="3">Trigram</option></select>
+        <input type="number" id="freq-top" value="20" min="5" max="100" style="width:52px">
+        <label style="font-size:11.5px;color:var(--ink-muted);white-space:nowrap"><input type="checkbox" id="freq-stop" checked> Stop</label>
+        <select id="freq-view"><option value="table">Tabel</option><option value="bar">Bar</option><option value="pie">Pie</option></select>
+        <button class="go-btn" onclick="runFreq()">Tampilkan</button>
+        <button class="exp-btn" onclick="exportCSV('freq')">↓ CSV</button>
+      </div>
+      <div id="freq-out"></div>
+    </div>
+
+    <!-- CLOUD -->
+    <div id="cloud-panel" class="fpanel card">
+      <div class="panel-title">Word Cloud</div>
+      <div class="ctrl">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Maks:</label>
+        <input type="number" id="cloud-max" value="60" min="10" max="150" style="width:56px">
+        <button class="go-btn" onclick="runCloud()">Generate</button>
+      </div>
+      <div id="cloud-out"></div>
+    </div>
+
+    <!-- COLLOC -->
+    <div id="colloc-panel" class="fpanel card">
+      <div class="panel-title">Kolokasi &amp; Asosiasi</div>
+      <div class="ctrl">
+        <input type="text" id="colloc-word" placeholder="Kata target..." style="flex:1;min-width:90px">
+        <select id="colloc-measure" style="flex:1"><option value="mi">MI</option><option value="t">T-score</option><option value="freq">Frekuensi</option></select>
+        <input type="number" id="colloc-win" value="4" min="1" max="10" style="width:50px">
+        <button class="go-btn" onclick="runColloc()">Hitung</button>
+        <button class="exp-btn" onclick="exportCSV('colloc')">↓ CSV</button>
+      </div>
+      <div id="colloc-out"></div>
+    </div>
+
+    <!-- TOPIC -->
+    <div id="topic-panel" class="fpanel card">
+      <div class="panel-title">Analisis Topik</div>
+      <div class="ctrl">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Topik:</label>
+        <select id="topic-num-select"><option value="3">3</option><option value="5" selected>5</option><option value="7">7</option><option value="10">10</option></select>
+        <label style="font-size:11.5px;color:var(--ink-muted)">Kata:</label>
+        <input type="number" id="topic-words-count" value="8" min="3" max="20" style="width:50px">
+        <button class="go-btn" onclick="runTopic()">Ekstrak</button>
+      </div>
+      <div id="topic-out"></div>
+    </div>
+
+    <!-- SENTIMENT -->
+    <div id="sentiment-panel" class="fpanel card">
+      <div class="panel-title">Analisis Sentimen <span style="font-size:11px;color:var(--ink-muted);font-family:'DM Mono',monospace;">leksikon diperluas</span></div>
+      <div class="ctrl">
+        <select id="sent-unit"><option value="sent">Per kalimat</option><option value="para">Per paragraf</option></select>
+        <button class="go-btn" onclick="runSentiment()">Analisis</button>
+        <button class="exp-btn" onclick="exportCSV('sentiment')">↓ CSV</button>
+      </div>
+      <div id="sentiment-out"></div>
+    </div>
+
+    <!-- NARASI -->
+    <div id="narasi-panel" class="fpanel card">
+      <div class="panel-title">Analisis Narasi</div>
+      <div class="ctrl"><button class="go-btn" onclick="runNarasi()">Analisis Narasi</button></div>
+      <div id="narasi-out"></div>
+    </div>
+
+    <!-- ANOTASI (NEW) -->
+    <div id="annot-panel" class="fpanel card">
+      <div class="panel-title">Anotasi &amp; Labeling Manual <span class="pbadge pb-v4">BARU v4</span></div>
+      <div class="info-box">Pilih label, lalu <strong>seleksi teks</strong> di area teks di bawah ini untuk memberi anotasi. Klik anotasi untuk menghapus.</div>
+      <div class="annot-toolbar" id="annot-toolbar"></div>
+      <div style="display:flex;gap:6px;margin-bottom:.75rem;flex-wrap:wrap;">
+        <input type="text" id="annot-new-label" placeholder="Nama label baru..." style="flex:1;min-width:120px">
+        <input type="color" id="annot-new-color" value="#0b7a75" style="width:36px;padding:3px;cursor:pointer;">
+        <button class="go-btn" onclick="addAnnotLabel()">+ Label</button>
+        <button class="exp-btn" onclick="exportCSV('annot')">↓ CSV Anotasi</button>
+        <button class="exp-btn" onclick="clearAnnotations()">Hapus semua</button>
+      </div>
+      <div id="annot-text-area" class="annot-text-area" onmouseup="handleAnnotSelect()"></div>
+      <div id="annot-list" class="annot-list"></div>
+    </div>
+
+    <!-- KEYNESS (NEW) -->
+    <div id="keyness-panel" class="fpanel card">
+      <div class="panel-title">Keyness Analysis <span class="pbadge pb-v4">BARU v4</span></div>
+      <div class="keyness-info">Keyness mengukur kata yang secara statistik <strong>lebih khas</strong> dalam korpus target dibanding korpus referensi menggunakan uji <strong>Log-Likelihood (G²)</strong>. Kata dengan nilai positif tinggi = lebih khas di target; negatif = lebih khas di referensi.</div>
+      <div class="ctrl">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Korpus referensi:</label>
+        <select id="keyness-ref"><option value="general">Bahasa Indonesia umum (built-in)</option><option value="corpus-b">Korpus B (jika sudah diinput)</option></select>
+        <input type="number" id="keyness-top" value="30" min="10" max="100" style="width:56px">
+        <button class="go-btn" onclick="runKeyness()">Hitung Keyness</button>
+        <button class="exp-btn" onclick="exportCSV('keyness')">↓ CSV</button>
+      </div>
+      <div id="keyness-out"></div>
+    </div>
+
+    <!-- NER (NEW) -->
+    <div id="ner-panel" class="fpanel card">
+      <div class="panel-title">Deteksi Entitas (NER) <span class="pbadge pb-v4">BARU v4</span></div>
+      <div class="info-box">Named Entity Recognition berbasis aturan — mendeteksi <strong>Orang</strong>, <strong>Organisasi</strong>, <strong>Tempat</strong>, dan <strong>Waktu</strong> dalam teks. Akurasi terbaik untuk teks formal Bahasa Indonesia.</div>
+      <div class="ctrl">
+        <button class="go-btn" onclick="runNER()">Deteksi Entitas</button>
+        <button class="exp-btn" onclick="exportCSV('ner')">↓ CSV</button>
+      </div>
+      <div id="ner-out"></div>
+    </div>
+
+    <!-- POS TAGGING (NEW v4.1) -->
+    <div id="pos-panel" class="fpanel card">
+      <div class="panel-title">POS Tagging <span class="pbadge pb-v4">BARU v4.1</span></div>
+      <div class="info-box">Part-of-Speech tagging berbasis aturan morfologi Bahasa Indonesia — mendeteksi <strong>Nomina, Verba, Adjektiva, Adverbia, Pronomina, Konjungsi, Preposisi</strong>, dan kelas kata lainnya.</div>
+      <div class="ctrl">
+        <select id="pos-view">
+          <option value="summary">Ringkasan distribusi</option>
+          <option value="tagged">Teks ter-tag</option>
+          <option value="table">Tabel kata per kelas</option>
+        </select>
+        <select id="pos-filter">
+          <option value="all">Semua kelas kata</option>
+          <option value="NN">Nomina (NN)</option>
+          <option value="VB">Verba (VB)</option>
+          <option value="JJ">Adjektiva (JJ)</option>
+          <option value="RB">Adverbia (RB)</option>
+          <option value="PR">Pronomina (PR)</option>
+          <option value="CC">Konjungsi (CC)</option>
+          <option value="IN">Preposisi (IN)</option>
+        </select>
+        <button class="go-btn" onclick="runPOS()">Analisis POS</button>
+        <button class="exp-btn" onclick="exportCSV('pos')">↓ CSV</button>
+      </div>
+      <div id="pos-out"></div>
+    </div>
+
+    <!-- READABILITY (NEW) -->
+    <div id="readability-panel" class="fpanel card">
+      <div class="panel-title">Analisis Keterbacaan <span class="pbadge pb-v4">BARU v4</span></div>
+      <div class="ctrl"><button class="go-btn" onclick="runReadability()">Hitung Keterbacaan</button></div>
+      <div id="readability-out"></div>
+    </div>
+
+    <!-- DISPERSION (NEW) -->
+    <div id="dispersion-panel" class="fpanel card">
+      <div class="panel-title">Plot Dispersi Kata <span class="pbadge pb-v4">BARU v4</span></div>
+      <div class="ctrl">
+        <input type="text" id="disp-words" placeholder="Kata (pisah koma): media, wacana..." style="flex:1">
+        <button class="go-btn" onclick="runDispersion()">Plot</button>
+        <button class="exp-btn" onclick="exportCSV('dispersion')">↓ CSV</button>
+      </div>
+      <div id="dispersion-out"></div>
+    </div>
+
+    <!-- COMPARE -->
+    <div id="compare-panel" class="fpanel card">
+      <div class="panel-title">Komparasi Korpus</div>
+      <div class="info-box">Gunakan tab <strong>Bandingkan</strong> di sidebar untuk input dua korpus.</div>
+      <div class="ctrl"><button class="go-btn" onclick="runCompare()">Bandingkan</button><button class="exp-btn" onclick="exportCSV('compare')">↓ CSV</button></div>
+      <div id="compare-out"></div>
+    </div>
+
+    <!-- NETWORK -->
+    <div id="network-panel" class="fpanel card">
+      <div class="panel-title">Jaringan Kata <span class="pbadge pb-sp">SPASIAL</span></div>
+      <div class="ctrl">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Node:</label>
+        <input type="number" id="net-nodes" value="40" min="10" max="80" style="width:56px">
+        <label style="font-size:11.5px;color:var(--ink-muted)">Win:</label>
+        <input type="number" id="net-win" value="3" min="1" max="8" style="width:50px">
+        <button class="go-btn" onclick="runNetwork()">Bangun Graf</button>
+        <button class="exp-btn" onclick="exportNetworkSVG()">↓ SVG</button>
+      </div>
+      <svg id="network-svg"></svg>
+      <p style="font-size:10.5px;color:var(--ink-muted);margin-top:.4rem;text-align:center;">Drag node · Scroll zoom · Klik node untuk highlight</p>
+    </div>
+
+    <!-- HEATMAP -->
+    <div id="heatmap-panel" class="fpanel card">
+      <div class="panel-title">Heatmap Frekuensi <span class="pbadge pb-sp">SPASIAL</span></div>
+      <div class="ctrl">
+        <input type="text" id="hm-words" placeholder="Kata (pisah koma)..." style="flex:1">
+        <input type="number" id="hm-segs" value="10" min="3" max="30" style="width:52px">
+        <button class="go-btn" onclick="runHeatmap()">Buat Heatmap</button>
+      </div>
+      <div id="heatmap-out"></div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div id="timeline-panel" class="fpanel card">
+      <div class="panel-title">Timeline Kronologis <span class="pbadge pb-sp">SPASIAL</span></div>
+      <div class="ctrl"><button class="go-btn" onclick="runTimeline()">Ekstrak Timeline</button><button class="exp-btn" onclick="exportCSV('timeline')">↓ CSV</button></div>
+      <div id="timeline-out"></div>
+    </div>
+
+    <!-- GEO -->
+    <div id="geo-panel" class="fpanel card">
+      <div class="panel-title">Peta Geografis <span class="pbadge pb-sp">SPASIAL</span></div>
+      <div class="ctrl"><button class="go-btn" onclick="runGeo()">Deteksi Wilayah</button><button class="exp-btn" onclick="exportCSV('geo')">↓ CSV</button></div>
+      <div id="geo-out"></div>
+    </div>
+  </div>
+</section>
+</main>
+<footer><strong>DiscourseLens</strong> v4 · See What Text Really Means · AWK Research Platform · Browser-only · No data sent to server</footer>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+let tokens=[],rawText='',sentences=[];
+let tokensA=[],tokensB=[],rawA='',rawB='';
+let lastKWIC=[],lastFreq=[],lastColloc=[],lastSent=[],lastTimeline=[],lastGeo=[],lastCompare=[],lastKeyness=[],lastNER=[],lastDisp=[];
+let annotations=[],annotLabels=[{name:'Ideologi Dominan',color:'#0b7a75'},{name:'Framing Negatif',color:'#b5334a'},{name:'Representasi Kekuasaan',color:'#5c3d8f'},{name:'Marginalisasi',color:'#c9820a'},{name:'Wacana Kritis',color:'#1a7a3c'}];
+let selectedAnnotLabel=0;
+let freqChart=null,currentInput='paste';
+
+// ═══════════════════════════════════════════════════════
+// STOPWORDS — EXTENDED (Sastrawi-inspired)
+// ═══════════════════════════════════════════════════════
+const SW_DEFAULT=new Set(['yang','dan','di','ke','dari','untuk','dengan','ini','itu','adalah','atau','dalam','pada','tidak','juga','akan','ada','oleh','karena','sudah','bisa','saya','kamu','dia','kami','mereka','kita','anda','nya','lah','pun','pula','jadi','dapat','telah','lebih','seperti','namun','tetapi','tapi','sehingga','agar','supaya','bila','jika','maka','meski','walau','bahwa','tersebut','antara','saat','setelah','sebelum','hanya','masih','para','bagi','secara','sangat','begitu','sebuah','suatu','setiap','semua','selalu','sering','jarang','banyak','sedikit','sedang','ketika','ketidak','apakah','ialah','yakni','yaitu','per','pun','lagi','paling','sangat','lebih','kurang','cukup','hampir','agak','terlalu','belum','tidak','bukan','tak','jangan','mau','ingin','harus','perlu','coba','mari','ayo','oh','ya','ah','eh','ha','he','sih','deh','dong','lho','kok','kan','lah','tuh','nah','wah','yuk','nih','tapi','namun','akan tetapi','meskipun','walaupun','kendati','maka','hingga','sampai','sejak','semenjak','sebelum','setelah','selama','sewaktu','tatkala','manakala','apabila','the','a','an','is','are','was','were','be','been','being','to','of','in','on','at','for','with','he','she','it','they','we','you','i','and','or','but','not','this','that','as','by','from','have','has','had','do','does','did','will','would','could','should','may','might','its','their','our','your','his','her','who','what','when','where','which','how','why','there','here','all','also','just','very','so','if','then','than','about','up','out','no','more','can','said','each','make','use','way','many','time','over','such','even','most','after','two','these','other','been','its']);
+let SW_CUSTOM=new Set([...SW_DEFAULT]);
+
+// ═══════════════════════════════════════════════════════
+// SENTIMEN LEKSIKON — DIPERLUAS
+// ═══════════════════════════════════════════════════════
+const SENT_POS=new Set([
+  // Umum positif
+  'baik','bagus','positif','benar','berhasil','sukses','maju','kuat','hebat','unggul','bermanfaat','berguna','efektif','efisien','adil','jujur','transparan','demokratis','damai','sejahtera','merdeka','progresif','inovatif','kreatif','cerdas','bijak','toleran','inklusif','meningkat','berkembang','membaik','tumbuh','optimis','harapan','solusi','harmonis','bersatu','bangkit','indah','mulia','luhur','bermartabat','berdaya','mandiri','setara','responsif','akuntabel','partisipatif','kesetaraan','keadilan','kesejahteraan','perdamaian','kemajuan','pencapaian','keberhasilan','prestasi','terobosan',
+  // AWK positif — emansipatoris, kritis-konstruktif
+  'emansipasi','emansipatoris','pemberdayaan','empowerment','resistensi','perlawanan','transformasi','transformatif','rekonsiliasi','demokratisasi','liberasi','liberatif','dekolonisasi','inklusivitas','pluralisme','multikulturalisme','toleransi','keberagaman','kebebasan','hak asasi','partisipasi','representatif','responsif','akuntabilitas','transparansi','keadilan sosial','solidaritas','kesetaraan gender','advokasi','pembebasan','pencerahan','kritisisme','refleksivitas','kesadaran kritis','literasi kritis','kontestasi','negosiasi','dialog','konsensus','kolaborasi','sinergi','keberdayaan','pembangunan','reformasi','rekonstruksi',
+  // Inggris positif AWK
+  'good','great','positive','success','strong','effective','fair','just','democratic','peaceful','free','innovative','creative','smart','wise','tolerant','excellent','beneficial','powerful','right','true','honest','transparent','empowering','inclusive','progressive','equitable','accountable','flourishing','thriving','emancipatory','liberatory','transformative','participatory','collaborative','critical','reflexive','dialogic','consensual','pluralistic','egalitarian','solidary'
+]);
+const SENT_NEG=new Set([
+  // Umum negatif
+  'buruk','jelek','negatif','salah','gagal','lemah','rendah','rusak','berbahaya','merugikan','korupsi','diskriminasi','kekerasan','penindasan','ketidakadilan','manipulasi','propaganda','stigma','stereotip','marginalisasi','eksploitasi','represif','otoriter','dominasi','hegemoni','bias','menurun','memburuk','krisis','konflik','ancaman','masalah','bahaya','kerugian','kemiskinan','ketimpangan','ketidaksetaraan','penyalahgunaan','kecurangan','nepotisme','kolusi','intimidasi','kebohongan','penipuan','pemalsuan','pembungkaman','pembatasan','pelanggaran','penghisapan','kriminalisasi','stigmatisasi',
+  // AWK negatif — relasi kuasa, ideologi kritis
+  'hegemonik','dominan','subordinasi','subaltern','othering','marginalisasi','objektivikasi','komodifikasi','depolitisasi','naturalisasi','normalisasi','invisibilisasi','deprivasi','eksklusi','segregasi','inferiorisasi','superiorasi','rasisasi','patriarki','patriarkal','seksisme','seksistik','diskriminatif','stereotipikal','prasangka','fobia','xenofobia','homofobia','islamofobia','sekteran','chauvinis','imperialisme','kolonialisme','neokolonialisme','kapitalisme','neoliberalisme','kooptasi','kooptatif','delegitimasi','kriminalisasi','represi','intimidatif','otoriter','totaliter','despotisme','feodalisme','oligarki','plutokrasi','kronisme','nepotis','manipulatif','demagogi','populisme','radikalisme','ekstremisme','fundamentalisme','intoleransi','fanatisme','sektarianisme','tribalism','primordialisme','premanisme','militerisme','fasisme','apartheid','genosida','etnisitas berlebihan',
+  // Inggris negatif AWK
+  'bad','negative','failure','weak','corrupt','discrimination','violence','oppression','injustice','manipulation','propaganda','stereotyping','exploitation','repressive','authoritarian','domination','hegemony','wrong','false','harmful','dangerous','unfair','dishonest','suppression','exclusion','poverty','inequality','abuse','fraud','intimidation','subordination','marginalization','objectification','commodification','depoliticization','naturalization','normalization','invisibilization','deprivation','segregation','inferiorization','racism','sexism','patriarchal','discriminatory','prejudice','xenophobia','imperialism','colonialism','neocolonialism','capitalism','neoliberalism','cooptation','delegitimization','repression','totalitarian','despotism','oligarchy','nepotism','demagoguery','extremism','fundamentalism','intolerance','sectarianism','tribalism','militarism','fascism'
+]);
+
+// ═══════════════════════════════════════════════════════
+// NER KAMUS — INDONESIA
+// ═══════════════════════════════════════════════════════
+const NER_PERSONS=['jokowi','prabowo','megawati','susilo','bambang','yudhoyono','habibie','wahid','soekarno','hatta','anies','ahok','ridwan','kamil','ganjar','pranowo','mahfud','muhaimin','cak imin','gibran','airlangga','luhut','erick','thohir','sri mulyani','basuki','agus','harimurti','yudhoyono','ahy','gus dur','bj habibie','sandiaga','uno'];
+const NER_ORGS=['kpu','bawaslu','mahkamah konstitusi','mk','dpr','dprd','mpr','kpk','polri','tni','bumn','bpk','ojk','bi','bank indonesia','kemendikbud','kemenkes','kemenag','komnas ham','lbh','walhi','kontras','icw','pdip','pdi-p','gerindra','golkar','pkb','nasdem','demokrat','pks','pan','ppp','hanura','perindo','psi','kowani','apindo','kadin','mui','nu','muhammadiyah','pgri','kowani','kemenko','setpres','setkab','bappenas','kemenpan','bpjs','kpai','lpsk','ombudsman','un','unicef','undp','who','imf','world bank','asean','pbb'];
+const NER_PLACES=[...Object.keys({'jakarta':1,'surabaya':1,'bandung':1,'medan':1,'semarang':1,'makassar':1,'palembang':1,'tangerang':1,'depok':1,'bekasi':1,'bogor':1,'yogyakarta':1,'solo':1,'malang':1,'batam':1,'pekanbaru':1,'banjarmasin':1,'pontianak':1,'samarinda':1,'manado':1,'denpasar':1,'mataram':1,'kupang':1,'ambon':1,'jayapura':1,'aceh':1,'lampung':1,'kalimantan':1,'sulawesi':1,'papua':1,'jawa':1,'sumatera':1,'bali':1,'flores':1,'lombok':1,'ntt':1,'ntb':1,'maluku':1,'ternate':1,'gorontalo':1,'palu':1,'kendari':1,'padang':1,'bengkulu':1,'jambi':1,'indonesia':1,'ibu kota':1,'istana':1,'gedung putih':1,'senayan':1,'monas':1})];
+const NER_TIME_PATTERNS=[/\b\d{4}\b/g,/\b\d{1,2}\s*(januari|februari|maret|april|mei|juni|juli|agustus|september|oktober|november|desember)\s*\d{4}\b/gi,/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2},?\s*\d{4}\b/gi,/\bpada\s+(tahun\s+)?\d{4}\b/gi,/\b(abad ke-?\d+|abad \d+)\b/gi,/\b(dekade|dasawarsa)\s+\d+/gi];
+
+// ═══════════════════════════════════════════════════════
+// GEO
+// ═══════════════════════════════════════════════════════
+const GEO_ID={'jakarta':[-6.21,106.85],'surabaya':[-7.26,112.75],'bandung':[-6.92,107.62],'medan':[3.60,98.67],'semarang':[-6.99,110.42],'makassar':[-5.15,119.43],'palembang':[-2.98,104.78],'tangerang':[-6.18,106.63],'depok':[-6.40,106.79],'bekasi':[-6.24,106.98],'bogor':[-6.60,106.81],'yogyakarta':[-7.80,110.37],'solo':[-7.58,110.82],'malang':[-7.97,112.63],'batam':[1.05,104.03],'pekanbaru':[0.51,101.45],'banjarmasin':[-3.32,114.59],'pontianak':[-0.03,109.34],'samarinda':[-0.49,117.14],'manado':[1.47,124.84],'denpasar':[-8.67,115.21],'mataram':[-8.58,116.12],'kupang':[-10.18,123.61],'ambon':[-3.66,128.19],'jayapura':[-2.53,140.72],'aceh':[5.55,95.32],'lampung':[-4.56,105.41],'bali':[-8.34,115.09],'lombok':[-8.65,116.32],'papua':[-4.0,136.0],'kalimantan':[-0.0,113.0],'sulawesi':[-2.0,121.0],'sumatera':[0.0,101.0]};
+
+// ═══════════════════════════════════════════════════════
+// REFERENSI FREKUENSI UMUM BAHASA INDONESIA (estimasi)
+// Untuk keyness calculation
+// ═══════════════════════════════════════════════════════
+const REF_FREQ={'yang':0.028,'dan':0.022,'di':0.018,'itu':0.012,'ini':0.011,'dengan':0.010,'untuk':0.009,'dari':0.009,'dalam':0.008,'pada':0.007,'tidak':0.007,'adalah':0.006,'juga':0.006,'ke':0.006,'oleh':0.005,'atau':0.005,'ada':0.005,'saya':0.004,'bisa':0.004,'akan':0.004,'sudah':0.003,'karena':0.003,'lebih':0.003,'seperti':0.003,'dapat':0.003,'bahwa':0.003,'namun':0.003,'tetapi':0.002,'saat':0.002,'jika':0.002,'hanya':0.002,'telah':0.002,'kita':0.002,'mereka':0.002,'dia':0.002,'tersebut':0.002};
+
+// ═══════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════
+function tokenize(text){return text.toLowerCase().replace(/[^a-zA-ZÀ-ÿ\s]/g,' ').split(/\s+/).filter(w=>w.length>1);}
+function getSentences(text){return (text.match(/[^.!?]+[.!?]*/g)||[text]).filter(s=>s.trim().length>5);}
+function empty(msg){return `<div class="empty"><div class="ico">🔍</div><p>${msg}</p></div>`;}
+function getFiltered(toks){return (toks||tokens).filter(t=>!SW_CUSTOM.has(t)&&t.length>1);}
+function freqMap(toks){const f={};toks.forEach(t=>{f[t]=(f[t]||0)+1;});return f;}
+function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function updateStats(text){
+  const toks=tokenize(text),sents=text.split(/[.!?]+/).filter(s=>s.trim().length>1),types=new Set(toks);
+  const ttr=toks.length>0?+(types.size/toks.length*100).toFixed(1):0;
+  ['s-tok','s-typ','s-sent','s-ttr'].forEach((id,i)=>{document.getElementById(id).textContent=[toks.length.toLocaleString(),types.size.toLocaleString(),sents.length.toLocaleString(),ttr][i];});
+  document.getElementById('stats-grid').style.display='grid';
+  document.getElementById('hs-tok').textContent=toks.length.toLocaleString();
+  document.getElementById('hs-typ').textContent=types.size.toLocaleString();
+  document.getElementById('hs-ttr').textContent=ttr+'%';
+}
+
+// ═══════════════════════════════════════════════════════
+// SWITCHING
+// ═══════════════════════════════════════════════════════
+function switchInput(m){
+  currentInput=m;
+  ['paste','upload','ocr','compare'].forEach(p=>document.getElementById(p+'-panel').style.display=p===m?'block':'none');
+  document.querySelectorAll('.seg-btn').forEach((b,i)=>b.classList.toggle('active',['paste','upload','ocr','compare'][i]===m));
+}
+function switchFeat(f,btn){
+  document.querySelectorAll('.feat-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.fpanel').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(f+'-panel').classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// FILE & OCR INPUT
+// ═══════════════════════════════════════════════════════
+document.getElementById('corpus-text').addEventListener('input',function(){this.value.trim()?updateStats(this.value.trim()):document.getElementById('stats-grid').style.display='none';});
+document.getElementById('file-input').addEventListener('change',function(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{rawText=ev.target.result;document.getElementById('corpus-text').value=rawText;updateStats(rawText);switchInput('paste');};r.readAsText(f,'UTF-8');});
+const dz=document.getElementById('drop-zone');
+['dragover','dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.toggle('drag',ev==='dragover');if(ev==='drop'){const f=e.dataTransfer.files[0];if(f){const r=new FileReader();r.onload=ev2=>{rawText=ev2.target.result;document.getElementById('corpus-text').value=rawText;updateStats(rawText);switchInput('paste');};r.readAsText(f,'UTF-8');}}}));
+document.getElementById('img-input').addEventListener('change',async function(e){
+  const file=e.target.files[0];if(!file)return;
+  const status=document.getElementById('ocr-status');
+  const url=URL.createObjectURL(file);
+  // Progress bar HTML
+  status.innerHTML=`<img src="${url}" class="ocr-preview">
+    <div style="margin-top:.6rem;background:var(--paper-warm);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;">
+      <div id="ocr-prog-bar" style="height:6px;background:var(--teal);width:0%;transition:width .3s;border-radius:var(--r);"></div>
+    </div>
+    <div class="ocr-msg" id="ocr-msg-txt">Menginisialisasi Tesseract.js...</div>
+    <div style="font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;text-align:center;margin-top:2px;" id="ocr-msg-sub">Pertama kali: mengunduh model bahasa ~20MB (Indonesia + Inggris)</div>`;
+  function setOCRProgress(pct,msg,sub){
+    const bar=document.getElementById('ocr-prog-bar');
+    const txt=document.getElementById('ocr-msg-txt');
+    const subEl=document.getElementById('ocr-msg-sub');
+    if(bar)bar.style.width=pct+'%';
+    if(txt)txt.textContent=msg;
+    if(subEl&&sub!==undefined)subEl.textContent=sub;
+  }
+  try{
+    const worker=await Tesseract.createWorker('ind+eng',1,{
+      logger:m=>{
+        if(m.status==='loading tesseract core')setOCRProgress(5,'Memuat inti Tesseract...','');
+        else if(m.status==='initializing tesseract')setOCRProgress(10,'Menginisialisasi mesin OCR...','');
+        else if(m.status==='loading language traineddata')setOCRProgress(Math.round(10+m.progress*50),'Mengunduh model bahasa... '+Math.round(m.progress*100)+'%','Model Indonesia + Inggris (~20MB) — hanya sekali diunduh');
+        else if(m.status==='initializing api')setOCRProgress(65,'Menyiapkan API OCR...','');
+        else if(m.status==='recognizing text')setOCRProgress(Math.round(65+m.progress*33),'Memproses teks: '+Math.round(m.progress*100)+'%','Sedang membaca karakter dalam gambar...');
+      }
+    });
+    setOCRProgress(98,'Menyelesaikan...','');
+    const {data:{text}}=await worker.recognize(file);
+    await worker.terminate();
+    setOCRProgress(100,'✓ Selesai!','');
+    rawText=text;document.getElementById('corpus-text').value=rawText;updateStats(rawText);
+    status.querySelector('#ocr-msg-txt').style.color='var(--teal)';
+    status.querySelector('#ocr-msg-txt').textContent=`✓ OCR selesai — ${tokenize(text).length} token diekstrak`;
+    status.querySelector('#ocr-msg-sub').textContent='Teks sudah dipindahkan ke tab Teks';
+    setTimeout(()=>switchInput('paste'),1200);
+  }catch(err){
+    if(document.getElementById('ocr-prog-bar'))document.getElementById('ocr-prog-bar').style.background='var(--rose)';
+    const m=document.getElementById('ocr-msg-txt');if(m){m.style.color='var(--rose)';m.textContent='Gagal: '+err.message;}
+    const s=document.getElementById('ocr-msg-sub');if(s)s.textContent='Coba lagi atau gunakan gambar dengan teks yang lebih jelas';
+  }
+});
+const imgDrop=document.getElementById('img-drop');
+['dragover','dragleave','drop'].forEach(ev=>imgDrop.addEventListener(ev,e=>{e.preventDefault();imgDrop.classList.toggle('drag',ev==='dragover');if(ev==='drop'){const f=e.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('img-input').files=dt.files;document.getElementById('img-input').dispatchEvent(new Event('change'));}}}));
+
+// ═══════════════════════════════════════════════════════
+// ANALYZE
+// ═══════════════════════════════════════════════════════
+function analyzeCorpus(){
+  if(currentInput==='compare'){
+    rawA=document.getElementById('corpus-a').value.trim();rawB=document.getElementById('corpus-b').value.trim();
+    if(!rawA||!rawB){alert('Masukkan kedua korpus.');return;}
+    tokensA=tokenize(rawA);tokensB=tokenize(rawB);rawText=rawA;tokens=tokensA;sentences=getSentences(rawA);updateStats(rawA);
+  }else{
+    const text=document.getElementById('corpus-text').value.trim();
+    if(!text){alert('Masukkan teks korpus.');return;}
+    rawText=text;tokens=tokenize(text);sentences=getSentences(text);updateStats(text);
+  }
+  document.getElementById('welcome').style.display='none';
+  document.getElementById('analysis-ui').style.display='block';
+  document.getElementById('embed-card').style.display='block';
+  loadAnnotText();
+  runFreq();runTopic();runCloud();runSentiment();
+  document.getElementById('analysis-ui').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ═══════════════════════════════════════════════════════
+// KWIC
+// ═══════════════════════════════════════════════════════
+function runKWIC(){
+  const word=document.getElementById('kwic-word').value.trim().toLowerCase();
+  const win=parseInt(document.getElementById('kwic-win').value)||5;
+  if(!word){document.getElementById('kwic-out').innerHTML=empty('Masukkan kata kunci.');return;}
+  const allToks=rawText.toLowerCase().replace(/[^a-zA-ZÀ-ÿ\s]/g,' ').split(/\s+/).filter(w=>w.length>0);
+  lastKWIC=[];
+  allToks.forEach((t,i)=>{if(t===word)lastKWIC.push([allToks.slice(Math.max(0,i-win),i).join(' '),t,allToks.slice(i+1,i+win+1).join(' ')]);});
+  if(!lastKWIC.length){document.getElementById('kwic-out').innerHTML=empty(`"${word}" tidak ditemukan.`);return;}
+  let html=`<p class="res-count">${lastKWIC.length} kemunculan · menampilkan ${Math.min(100,lastKWIC.length)}</p><div class="tbl-wrap"><table><thead><tr><th style="text-align:right">Konteks kiri</th><th style="text-align:center">Kata kunci</th><th>Konteks kanan</th></tr></thead><tbody>`;
+  lastKWIC.slice(0,100).forEach(([l,k,r])=>{html+=`<tr><td class="kwic-l">${l}</td><td style="text-align:center"><span class="kwic-k">${k}</span></td><td class="kwic-r">${r}</td></tr>`;});
+  document.getElementById('kwic-out').innerHTML=html+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// FREQUENCY
+// ═══════════════════════════════════════════════════════
+function runFreq(){
+  const n=parseInt(document.getElementById('freq-n').value)||1,top=parseInt(document.getElementById('freq-top').value)||20;
+  const useStop=document.getElementById('freq-stop').checked,view=document.getElementById('freq-view').value;
+  const src=useStop?tokens.filter(t=>!SW_CUSTOM.has(t)):tokens;
+  const freq={};for(let i=0;i<=src.length-n;i++){const g=src.slice(i,i+n).join(' ');freq[g]=(freq[g]||0)+1;}
+  lastFreq=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,top);
+  if(!lastFreq.length){document.getElementById('freq-out').innerHTML=empty('Tidak ada data.');return;}
+  if(view==='table'){
+    const max=lastFreq[0][1],cls=['bf-teal','bf-gold','bf-rose'];
+    let html='<div class="tbl-wrap"><table><thead><tr><th>#</th><th>'+(['Kata','Bigram','Trigram'][n-1])+'</th><th>Frek</th><th style="min-width:80px">Bar</th></tr></thead><tbody>';
+    lastFreq.forEach(([g,cnt],i)=>{const pct=Math.round(cnt/max*100);html+=`<tr><td class="rnk">${i+1}</td><td class="wrd">${g}</td><td><span class="cnt">${cnt}</span></td><td><div class="bar-row"><div class="bar-track"><div class="bar-fill ${cls[i<3?i:0]}" style="width:${pct}%"></div></div></div></td></tr>`;});
+    document.getElementById('freq-out').innerHTML=html+'</tbody></table></div>';
+  }else{
+    document.getElementById('freq-out').innerHTML='<div class="chart-wrap"><canvas id="freq-chart"></canvas></div>';
+    if(freqChart){freqChart.destroy();freqChart=null;}
+    const hues=[171,45,348,271,200,30,130,300];
+    freqChart=new Chart(document.getElementById('freq-chart'),{type:view==='pie'?'doughnut':'bar',data:{labels:lastFreq.map(e=>e[0]),datasets:[{label:'Frekuensi',data:lastFreq.map(e=>e[1]),backgroundColor:lastFreq.map((_,i)=>`hsl(${hues[i%hues.length]},55%,${view==='pie'?55:45}%)`),borderRadius:view==='bar'?4:0,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:view==='pie',position:'right',labels:{font:{size:10},boxWidth:10}}},scales:view==='bar'?{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10}}}}:{}}});
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// WORD CLOUD
+// ═══════════════════════════════════════════════════════
+function runCloud(){
+  const max=parseInt(document.getElementById('cloud-max').value)||60;
+  const filtered=getFiltered(),freq=freqMap(filtered),sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,max);
+  if(!sorted.length){document.getElementById('cloud-out').innerHTML=empty('Tidak ada data.');return;}
+  const maxF=sorted[0][1],colors=['var(--teal)','var(--gold)','var(--rose)','var(--violet)','var(--ink-soft)'];
+  document.getElementById('cloud-out').innerHTML='<div class="cloud-wrap">'+sorted.map(([w,cnt],i)=>`<span class="cloud-word" style="font-size:${Math.max(11,Math.min(44,11+Math.round((cnt/maxF)*33)))}px;color:${colors[i%colors.length]};opacity:${(0.5+0.5*(cnt/maxF)).toFixed(2)}">${w}</span>`).join('')+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// COLLOCATIONS
+// ═══════════════════════════════════════════════════════
+function runColloc(){
+  const word=document.getElementById('colloc-word').value.trim().toLowerCase(),measure=document.getElementById('colloc-measure').value,win=parseInt(document.getElementById('colloc-win').value)||4;
+  if(!word){document.getElementById('colloc-out').innerHTML=empty('Masukkan kata target.');return;}
+  const N=tokens.length,wFreq=freqMap(tokens),wf=wFreq[word]||0;
+  if(!wf){document.getElementById('colloc-out').innerHTML=empty(`"${word}" tidak ditemukan.`);return;}
+  const coFreq={};
+  for(let i=0;i<tokens.length;i++)if(tokens[i]===word)for(let j=Math.max(0,i-win);j<=Math.min(tokens.length-1,i+win);j++)if(j!==i&&!SW_CUSTOM.has(tokens[j])&&tokens[j]!==word)coFreq[tokens[j]]=(coFreq[tokens[j]]||0)+1;
+  lastColloc=Object.entries(coFreq).map(([w,cf])=>{const f2=wFreq[w]||1;let score;if(measure==='mi')score=Math.log2((cf*N)/(wf*f2+1));else if(measure==='t')score=(cf-(wf*f2/N))/Math.sqrt(cf+1);else score=cf;return{w,cf,score};}).sort((a,b)=>b.score-a.score).slice(0,30);
+  if(!lastColloc.length){document.getElementById('colloc-out').innerHTML=empty('Tidak ada kolokasi.');return;}
+  const maxS=Math.abs(lastColloc[0].score)||1,lbl={'mi':'MI','t':'T-score','freq':'Frek'}[measure];
+  let html=`<p class="res-count">Kolokasi <strong>${word}</strong> · ${lbl}</p><div class="tbl-wrap"><table><thead><tr><th>#</th><th>Kolokat</th><th>Frek</th><th>${lbl}</th><th>Kekuatan</th></tr></thead><tbody>`;
+  lastColloc.forEach(({w,cf,score},i)=>{const pct=Math.max(4,Math.round(Math.abs(score)/maxS*100));html+=`<tr><td class="rnk">${i+1}</td><td class="wrd">${w}</td><td><span class="cnt">${cf}</span></td><td style="font-family:'DM Mono',monospace;font-size:11.5px">${score.toFixed(3)}</td><td><div class="bar-row"><div class="bar-track"><div class="bar-fill bf-teal" style="width:${pct}%"></div></div></div></td></tr>`;});
+  document.getElementById('colloc-out').innerHTML=html+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// TOPIC
+// ═══════════════════════════════════════════════════════
+function runTopic(){
+  const numT=parseInt(document.getElementById('topic-num-select').value)||5,numW=parseInt(document.getElementById('topic-words-count').value)||8;
+  const filtered=tokens.filter(t=>!SW_CUSTOM.has(t)&&t.length>1);
+  if(filtered.length<3){document.getElementById('topic-out').innerHTML=empty('Korpus terlalu kecil.');return;}
+  const ranked=Object.entries(freqMap(filtered)).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  const colors=['var(--teal)','var(--violet)','var(--gold)','var(--rose)','#0e6655','#7d3c98','#ca6f1e','#1a5276'];
+  const buckets=[];for(let i=0;i<numT;i++)buckets.push([]);
+  ranked.forEach((w,i)=>{if(i<numT*numW)buckets[i%numT].push(w);});
+  const coWin=Math.max(3,Math.min(8,Math.floor(tokens.length/4)));
+  const themes=[];
+  for(let t=0;t<numT;t++){const bucket=buckets[t];if(!bucket||!bucket.length)continue;const seed=bucket[0];const co={};tokens.forEach((tok,i)=>{if(tok===seed)for(let j=Math.max(0,i-coWin);j<=Math.min(tokens.length-1,i+coWin);j++)if(j!==i&&!SW_CUSTOM.has(tokens[j])&&tokens[j].length>1)co[tokens[j]]=(co[tokens[j]]||0)+1;});const merged=[...new Set([...Object.entries(co).sort((a,b)=>b[1]-a[1]).map(e=>e[0]).filter(w=>w!==seed),...bucket.slice(1)])].slice(0,numW-1);themes.push({seed,words:merged,color:colors[t%colors.length]});}
+  if(!themes.length){document.getElementById('topic-out').innerHTML=empty('Tidak cukup data.');return;}
+  document.getElementById('topic-out').innerHTML='<div class="topics-grid">'+themes.map((th,i)=>`<div class="topic-card"><div class="topic-num">Topik ${i+1}</div><div class="topic-seed" style="color:${th.color}">${th.seed}</div><div class="topic-words-wrap">${th.words.map(w=>`<span class="topic-word">${w}</span>`).join('')}</div></div>`).join('')+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// SENTIMENT
+// ═══════════════════════════════════════════════════════
+function scoreSent(text){const toks=tokenize(text);let pos=0,neg=0;toks.forEach(t=>{if(SENT_POS.has(t))pos++;if(SENT_NEG.has(t))neg++;});if(pos>neg)return{label:'Positif',cls:'pos',pos,neg};if(neg>pos)return{label:'Negatif',cls:'neg',pos,neg};return{label:'Netral',cls:'neu',pos,neg};}
+function runSentiment(){
+  const unit=document.getElementById('sent-unit').value;
+  const units=unit==='sent'?sentences:rawText.split(/\n+/).filter(p=>p.trim().length>10);
+  if(!units.length){document.getElementById('sentiment-out').innerHTML=empty('Tidak ada data.');return;}
+  let posC=0,negC=0,neuC=0;
+  lastSent=units.map(u=>{const s=scoreSent(u);if(s.cls==='pos')posC++;else if(s.cls==='neg')negC++;else neuC++;return{text:u.trim(),...s};});
+  let html=`<div class="sent-summary"><div class="sent-card pos"><div class="sent-num pos">${posC}</div><div class="sent-lbl">Positif</div></div><div class="sent-card neg"><div class="sent-num neg">${negC}</div><div class="sent-lbl">Negatif</div></div><div class="sent-card neu"><div class="sent-num neu">${neuC}</div><div class="sent-lbl">Netral</div></div></div>`;
+  lastSent.forEach(({text,label,cls})=>{html+=`<div class="sent-row"><span class="spill pill-${cls}">${label}</span><span class="sent-txt">${escapeHtml(text.slice(0,200))}${text.length>200?'…':''}</span></div>`;});
+  document.getElementById('sentiment-out').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// NARASI
+// ═══════════════════════════════════════════════════════
+function runNarasi(){
+  if(!sentences.length||tokens.length<10){document.getElementById('narasi-out').innerHTML=empty('Korpus terlalu kecil.');return;}
+  const third=Math.ceil(sentences.length/3),awal=sentences.slice(0,third).join(' '),tengah=sentences.slice(third,third*2).join(' '),akhir=sentences.slice(third*2).join(' ');
+  function topSent(txt){return (getSentences(txt).filter(s=>s.trim().length>20).sort((a,b)=>b.length-a.length)[0])||'—';}
+  function topKata(txt,k=5){const toks=tokenize(txt).filter(t=>!SW_CUSTOM.has(t)&&t.length>2),f=freqMap(toks);return Object.entries(f).sort((a,b)=>b[1]-a[1]).slice(0,k).map(e=>e[0]).join(', ')||'—';}
+  function sudutPandang(){let f1=0,f2=0,f3=0;tokens.forEach(t=>{if(['saya','aku','kami','kita','i','we'].includes(t))f1++;else if(['kamu','anda','kalian','you'].includes(t))f2++;else if(['dia','mereka','ia','they','he','she'].includes(t))f3++;});if(f1>f2&&f1>f3)return{label:'Orang pertama',sub:'Narator terlibat langsung'};if(f2>f1&&f2>f3)return{label:'Orang kedua',sub:'Teks mengarah ke pembaca'};return{label:'Orang ketiga',sub:'Narator mengamati dari luar'};}
+  const sv=sudutPandang(),posT=tokens.filter(t=>SENT_POS.has(t)).length,negT=tokens.filter(t=>SENT_NEG.has(t)).length;
+  document.getElementById('narasi-out').innerHTML=`<div class="structure-bar"><div class="struct-seg awal"><div class="struct-lbl awal">Awal / Orientasi</div><div class="struct-txt">${escapeHtml(topSent(awal))}</div></div><div class="struct-seg tengah"><div class="struct-lbl tengah">Tengah / Komplikasi</div><div class="struct-txt">${escapeHtml(topSent(tengah))}</div></div><div class="struct-seg akhir"><div class="struct-lbl akhir">Akhir / Resolusi</div><div class="struct-txt">${escapeHtml(topSent(akhir))}</div></div></div><div class="framing-list"><div class="framing-item"><div class="framing-lbl">Sudut pandang</div><div class="framing-val">${sv.label}</div><div class="framing-sub">${sv.sub}</div></div><div class="framing-item"><div class="framing-lbl">Framing dominan</div><div class="framing-val">${posT>negT?'Cenderung positif / konstruktif':'Cenderung negatif / kritis'}</div><div class="framing-sub">Positif: ${posT} · Negatif: ${negT}</div></div><div class="framing-item"><div class="framing-lbl">Kata kunci Awal</div><div class="framing-val">${topKata(awal)}</div><div class="framing-sub">Sentimen: ${scoreSent(awal).label}</div></div><div class="framing-item"><div class="framing-lbl">Kata kunci Tengah</div><div class="framing-val">${topKata(tengah)}</div><div class="framing-sub">Sentimen: ${scoreSent(tengah).label}</div></div><div class="framing-item"><div class="framing-lbl">Kata kunci Akhir</div><div class="framing-val">${topKata(akhir)}</div><div class="framing-sub">Sentimen: ${scoreSent(akhir).label}</div></div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// ★ ANOTASI & LABELING MANUAL
+// ═══════════════════════════════════════════════════════
+// localStorage fallback wrapper
+const LS={
+  get(k){try{return localStorage.getItem(k);}catch{return null;}},
+  set(k,v){try{localStorage.setItem(k,v);return true;}catch(e){console.warn('localStorage tidak tersedia:',e);return false;}},
+  available(){try{localStorage.setItem('_test','1');localStorage.removeItem('_test');return true;}catch{return false;}}
+};
+const ANNOT_KEY='discourse_lens_annotations';
+const ANNOT_LABELS_KEY='discourse_lens_annot_labels';
+
+function saveAnnotToLS(){
+  if(!LS.available())return;
+  LS.set(ANNOT_KEY,JSON.stringify(annotations));
+  LS.set(ANNOT_LABELS_KEY,JSON.stringify(annotLabels));
+}
+function loadAnnotFromLS(){
+  if(!LS.available())return;
+  try{
+    const a=LS.get(ANNOT_KEY);if(a)annotations=JSON.parse(a);
+    const l=LS.get(ANNOT_LABELS_KEY);if(l)annotLabels=JSON.parse(l);
+  }catch{}
+}
+// Muat anotasi tersimpan saat halaman dibuka
+document.addEventListener('DOMContentLoaded',()=>{
+  loadAnnotFromLS();
+  renderSessionHistory();
+  if(!LS.available()){
+    const warn=document.createElement('div');
+    warn.style.cssText='position:fixed;bottom:1rem;right:1rem;background:#fef3dc;border:1px solid #f0b429;border-radius:8px;padding:.6rem 1rem;font-size:12px;font-family:DM Mono,monospace;z-index:999;max-width:280px;';
+    warn.textContent='ℹ️ Mode penyimpanan lokal tidak tersedia (incognito?). Gunakan tombol Simpan Sesi untuk backup manual.';
+    document.body.appendChild(warn);
+    setTimeout(()=>warn.remove(),6000);
+  }
+});
+function renderAnnotToolbar(){
+  document.getElementById('annot-toolbar').innerHTML=annotLabels.map((l,i)=>`<button class="annot-label-btn${selectedAnnotLabel===i?' sel':''}" style="background:${l.color}20;color:${l.color};border-color:${l.color}" onclick="selectAnnotLabel(${i})">${l.name}</button>`).join('');
+}
+function selectAnnotLabel(i){selectedAnnotLabel=i;renderAnnotToolbar();}
+function addAnnotLabel(){
+  const name=document.getElementById('annot-new-label').value.trim(),color=document.getElementById('annot-new-color').value;
+  if(!name)return;
+  annotLabels.push({name,color});
+  document.getElementById('annot-new-label').value='';
+  saveAnnotToLS();
+  renderAnnotToolbar();
+}
+function loadAnnotText(){
+  const el=document.getElementById('annot-text-area');
+  el.innerHTML=escapeHtml(rawText.slice(0,3000))+(rawText.length>3000?'\n\n[...teks dipotong untuk anotasi — 3000 karakter pertama]':'');
+  renderAnnotations();
+  renderAnnotToolbar();
+}
+function handleAnnotSelect(){
+  const sel=window.getSelection();
+  if(!sel||sel.isCollapsed||!sel.toString().trim())return;
+  const text=sel.toString().trim();
+  if(text.length<2){sel.removeAllRanges();return;}
+  const label=annotLabels[selectedAnnotLabel];
+  annotations.push({text,label:label.name,color:label.color,id:Date.now()});
+  sel.removeAllRanges();
+  saveAnnotToLS();
+  renderAnnotations();
+  renderAnnotList();
+}
+function renderAnnotations(){
+  const el=document.getElementById('annot-text-area');
+  let html=escapeHtml(rawText.slice(0,3000));
+  annotations.forEach(a=>{
+    const esc=a.text.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    html=html.replace(new RegExp(escapeHtml(esc),'g'),`<span class="annot-span" style="background:${a.color}30;border-bottom:2px solid ${a.color}" title="${a.label}" onclick="removeAnnot(${a.id})">${escapeHtml(a.text)}</span>`);
+  });
+  el.innerHTML=html;
+}
+function renderAnnotList(){
+  const el=document.getElementById('annot-list');
+  if(!annotations.length){el.innerHTML='';return;}
+  el.innerHTML=annotations.map(a=>`<div class="annot-item"><span class="annot-tag" style="background:${a.color}20;color:${a.color};border-color:${a.color}">${a.label}</span><span class="annot-txt">"${escapeHtml(a.text)}"</span><button class="annot-del" onclick="removeAnnot(${a.id})">×</button></div>`).join('');
+}
+function removeAnnot(id){annotations=annotations.filter(a=>a.id!==id);saveAnnotToLS();renderAnnotations();renderAnnotList();}
+function clearAnnotations(){annotations=[];saveAnnotToLS();renderAnnotations();renderAnnotList();}
+
+// ═══════════════════════════════════════════════════════
+// ★ KEYNESS ANALYSIS (NEW v4)
+// ═══════════════════════════════════════════════════════
+function runKeyness(){
+  const top=parseInt(document.getElementById('keyness-top').value)||30;
+  const refType=document.getElementById('keyness-ref').value;
+  const targetFreq=freqMap(getFiltered());
+  const targetTotal=Object.values(targetFreq).reduce((a,b)=>a+b,0);
+  if(targetTotal<10){document.getElementById('keyness-out').innerHTML=empty('Korpus terlalu kecil.');return;}
+  let refFreq={},refTotal=1000000;
+  if(refType==='corpus-b'&&tokensB.length>0){refFreq=freqMap(getFiltered(tokensB));refTotal=Object.values(refFreq).reduce((a,b)=>a+b,0);}
+  else{Object.entries(REF_FREQ).forEach(([w,p])=>{refFreq[w]=Math.round(p*refTotal);});}
+  function logLikelihood(O1,O2,N1,N2){
+    const E1=N1*(O1+O2)/(N1+N2)||0.001,E2=N2*(O1+O2)/(N1+N2)||0.001;
+    const ll=2*(O1*Math.log(O1/E1+0.001)+O2*Math.log(O2/E2+0.001));
+    return O1/N1>O2/N2?ll:-ll;
+  }
+  const allWords=new Set([...Object.keys(targetFreq),...Object.keys(refFreq)]);
+  lastKeyness=[];
+  allWords.forEach(w=>{
+    if(SW_CUSTOM.has(w)||w.length<2)return;
+    const O1=targetFreq[w]||0,O2=refFreq[w]||0;
+    if(O1<2&&O2<2)return;
+    const ll=logLikelihood(O1,O2,targetTotal,refTotal);
+    lastKeyness.push({w,O1,O2,ll,pct1:+(O1/targetTotal*1000).toFixed(2),pct2:+(O2/refTotal*1000).toFixed(2)});
+  });
+  lastKeyness.sort((a,b)=>Math.abs(b.ll)-Math.abs(a.ll));
+  const topItems=lastKeyness.slice(0,top);
+  if(!topItems.length){document.getElementById('keyness-out').innerHTML=empty('Tidak ada data keyness.');return;}
+  const maxLL=Math.max(...topItems.map(k=>Math.abs(k.ll)))||1;
+  let html=`<p class="res-count">Kata khas korpus target (${targetTotal.toLocaleString()} token) vs referensi</p><div class="tbl-wrap"><table><thead><tr><th>#</th><th>Kata</th><th>Frek Target</th><th>Frek Ref</th><th>G² (Log-Likelihood)</th><th>Kelas</th></tr></thead><tbody>`;
+  topItems.forEach(({w,O1,O2,ll,pct1,pct2},i)=>{
+    const isPos=ll>0;const pct=Math.max(5,Math.round(Math.abs(ll)/maxLL*100));
+    html+=`<tr><td class="rnk">${i+1}</td><td class="wrd">${w}</td><td><span class="cnt">${O1} <span style="color:var(--ink-muted);font-size:10px">(${pct1}‰)</span></span></td><td><span class="cnt">${O2} <span style="color:var(--ink-muted);font-size:10px">(${pct2}‰)</span></span></td><td><div class="bar-row"><div class="bar-track"><div class="bar-fill ${isPos?'bf-teal':'bf-rose'}" style="width:${pct}%"></div></div><span style="font-size:10px;font-family:'DM Mono',monospace;color:${isPos?'var(--teal)':'var(--rose)'};">${isPos?'+':''}${ll.toFixed(1)}</span></div></td><td><span class="spill ${isPos?'pill-pos':'pill-neg'}">${isPos?'KHAS TARGET':'KHAS REF'}</span></td></tr>`;
+  });
+  document.getElementById('keyness-out').innerHTML=html+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// ★ NER — Named Entity Recognition (NEW v4)
+// ═══════════════════════════════════════════════════════
+function runNER(){
+  if(!rawText){document.getElementById('ner-out').innerHTML=empty('Analisis korpus dulu.');return;}
+  const persons={},orgs={},places={},times={};
+  // Deteksi dari kamus
+  NER_PERSONS.forEach(p=>{const re=new RegExp('\\b'+p+'\\b','gi');const m=rawText.match(re)||[];if(m.length)persons[p]=(persons[p]||0)+m.length;});
+  NER_ORGS.forEach(o=>{const re=new RegExp('\\b'+o.replace(/[-\/]/g,'[-\\/]')+'\\b','gi');const m=rawText.match(re)||[];if(m.length)orgs[o]=(orgs[o]||0)+m.length;});
+  NER_PLACES.forEach(p=>{const re=new RegExp('\\b'+p+'\\b','gi');const m=rawText.match(re)||[];if(m.length)places[p]=(places[p]||0)+m.length;});
+  NER_TIME_PATTERNS.forEach(pat=>{const m=rawText.match(pat)||[];m.forEach(t=>{const k=t.trim().toLowerCase();times[k]=(times[k]||0)+1;});});
+  // ★ FALLBACK: deteksi kata/frasa dengan huruf kapital di tengah kalimat
+  const knownAll=new Set([...NER_PERSONS,...NER_ORGS,...NER_PLACES,'indonesia','januari','februari','maret','april','mei','juni','juli','agustus','september','oktober','november','desember']);
+  const sentList=rawText.split(/[.!?]+/).filter(s=>s.trim().length>5);
+  const capitalCandidates={};
+  sentList.forEach(sent=>{
+    // Ambil kata ke-2 dan seterusnya yang diawali kapital (bukan awal kalimat)
+    const words=sent.trim().split(/\s+/);
+    words.slice(1).forEach((w,i)=>{
+      const clean=w.replace(/[^a-zA-ZÀ-ÿ]/g,'');
+      if(clean.length>2&&/^[A-Z]/.test(clean)&&!SW_DEFAULT.has(clean.toLowerCase())&&!knownAll.has(clean.toLowerCase())){
+        // Cek apakah bisa jadi frasa nama (2 kata kapital berturutan)
+        const next=words[i+2]?words[i+2].replace(/[^a-zA-ZÀ-ÿ]/g,''):'';
+        if(next&&/^[A-Z]/.test(next)){
+          const phrase=(clean+' '+next).toLowerCase();
+          capitalCandidates[phrase]=(capitalCandidates[phrase]||0)+1;
+        } else {
+          capitalCandidates[clean.toLowerCase()]=(capitalCandidates[clean.toLowerCase()]||0)+1;
+        }
+      }
+    });
+  });
+  // Masukkan kandidat huruf kapital ke persons (belum ada di kamus)
+  const existingNER=new Set([...Object.keys(persons),...Object.keys(orgs),...Object.keys(places)]);
+  Object.entries(capitalCandidates).filter(([w,c])=>c>=1&&!existingNER.has(w)&&w.length>2).sort((a,b)=>b[1]-a[1]).slice(0,15).forEach(([w,c])=>{persons[w]=(persons[w]||0)+c;});
+
+  const sortedP=Object.entries(persons).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  const sortedO=Object.entries(orgs).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  const sortedPl=Object.entries(places).sort((a,b)=>b[1]-a[1]).slice(0,25);
+  const sortedT=Object.entries(times).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  lastNER=[...sortedP.map(([w,c])=>({w,c,type:'ORANG'})),...sortedO.map(([w,c])=>({w,c,type:'ORGANISASI'})),...sortedPl.map(([w,c])=>({w,c,type:'TEMPAT'})),...sortedT.map(([w,c])=>({w,c,type:'WAKTU'}))];
+  let html=`<div class="ner-summary"><div class="ner-cat-card"><div class="ner-cat-num" style="color:#1565c0">${sortedP.length}</div><div class="ner-cat-lbl">Orang/Nama</div></div><div class="ner-cat-card"><div class="ner-cat-num" style="color:var(--gold)">${sortedO.length}</div><div class="ner-cat-lbl">Organisasi</div></div><div class="ner-cat-card"><div class="ner-cat-num" style="color:var(--green)">${sortedPl.length}</div><div class="ner-cat-lbl">Tempat</div></div><div class="ner-cat-card"><div class="ner-cat-num" style="color:var(--violet)">${sortedT.length}</div><div class="ner-cat-lbl">Waktu</div></div></div>`;
+  const capCount=Object.keys(capitalCandidates).filter(w=>!existingNER.has(w)).length;
+  if(capCount>0)html+=`<div class="info-box" style="font-size:12px;margin-bottom:.75rem;">💡 <strong>Deteksi huruf kapital:</strong> ${capCount} nama proper tambahan terdeteksi otomatis dari pola kapital di tengah kalimat dan ditambahkan ke daftar Orang/Nama.</div>`;
+  function renderGroup(title,items,cls){if(!items.length)return'';return`<div style="margin-bottom:.9rem;"><p style="font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-muted);margin-bottom:.5rem;">${title}</p><div>${items.map(([w,c])=>`<span class="ner-entity ${cls}">${w}<span class="ner-cnt">${c}</span></span>`).join('')}</div></div>`;}
+  html+=renderGroup('Tokoh / Orang / Nama Diri',sortedP,'ner-person')+renderGroup('Organisasi / Institusi',sortedO,'ner-org')+renderGroup('Lokasi / Tempat',sortedPl,'ner-place')+renderGroup('Waktu / Periode',sortedT,'ner-time');
+  document.getElementById('ner-out').innerHTML=html||empty('Tidak ada entitas terdeteksi.');
+}
+
+// ═══════════════════════════════════════════════════════
+// ★ READABILITY (NEW v4)
+// ═══════════════════════════════════════════════════════
+function runReadability(){
+  if(!rawText||tokens.length<10){document.getElementById('readability-out').innerHTML=empty('Masukkan teks yang cukup panjang.');return;}
+  const words=tokens.length,sents=Math.max(1,sentences.length);
+  const syllableCount=s=>{s=s.toLowerCase().replace(/[^a-zA-ZÀ-ÿ]/g,'');const vowels=s.match(/[aiueoàáâãäåèéêëìíîïòóôõöùúûüy]/gi)||[];return Math.max(1,vowels.length);}
+  const totalSyllables=tokens.reduce((sum,w)=>sum+syllableCount(w),0);
+  const avgWordsPerSent=+(words/sents).toFixed(1);
+  const avgSyllablesPerWord=+(totalSyllables/words).toFixed(2);
+  const fkGrade=+(0.39*avgWordsPerSent+11.8*avgSyllablesPerWord-15.59).toFixed(1);
+  const fkRaw=206.835-1.015*avgWordsPerSent-84.6*avgSyllablesPerWord;
+  const fkEase=Math.min(100,Math.max(0,+fkRaw.toFixed(1)));
+  const fogIdx=Math.max(0,+(0.4*(avgWordsPerSent+(tokens.filter(w=>syllableCount(w)>=3).length/words*100))).toFixed(1));
+  function fkLabel(score){if(score>=90)return'Sangat mudah';if(score>=70)return'Mudah';if(score>=60)return'Cukup';if(score>=50)return'Agak sulit';if(score>=30)return'Sulit';return'Sangat sulit (teks akademik)';}
+  function gradeLabel(g){if(g<=6)return'SD';if(g<=9)return'SMP';if(g<=12)return'SMA';if(g<=16)return'S1';return'Pasca-S1';}
+  const smallWarn=tokens.length<5000?`<div class="info-box" style="margin-bottom:.75rem;">⚠️ <strong>Korpus kecil (${tokens.length.toLocaleString()} token)</strong> — hasil statistik kurang stabil secara metodologis. Gunakan minimal 5.000 token untuk analisis yang valid.</div>`:'' ;
+  let html=smallWarn+`<div class="read-scores">
+    <div class="read-score-card"><div class="read-score-num" style="color:${fkEase>60?'var(--teal)':'var(--rose)'}">${fkEase}</div><div class="read-score-lbl">Flesch Reading Ease</div><div class="read-score-desc">${fkLabel(fkEase)}</div></div>
+    <div class="read-score-card"><div class="read-score-num">${fkGrade}</div><div class="read-score-lbl">Flesch-Kincaid Grade</div><div class="read-score-desc">Setara kelas: ${gradeLabel(fkGrade)}</div></div>
+    <div class="read-score-card"><div class="read-score-num" style="color:${fogIdx>12?'var(--rose)':'var(--teal)'}">${fogIdx}</div><div class="read-score-lbl">Fog Index</div><div class="read-score-desc">${fogIdx>12?'Sulit dibaca':'Dapat dibaca umum'}</div></div>
+    <div class="read-score-card"><div class="read-score-num">${avgWordsPerSent}</div><div class="read-score-lbl">Rata-rata kata/kalimat</div><div class="read-score-desc">${avgWordsPerSent>20?'Kalimat panjang':'Kalimat sedang'}</div></div>
+    <div class="read-score-card"><div class="read-score-num">${avgSyllablesPerWord}</div><div class="read-score-lbl">Rata-rata suku kata/kata</div><div class="read-score-desc">${avgSyllablesPerWord>2?'Leksikon kompleks':'Leksikon sederhana'}</div></div>
+    <div class="read-score-card"><div class="read-score-num">${Math.round(tokens.filter(w=>syllableCount(w)>=3).length/words*100)}%</div><div class="read-score-lbl">Kata polisilibi (≥3 suku)</div><div class="read-score-desc">Indikator kompleksitas leksikal</div></div>
+  </div>
+  <div class="info-box" style="background:var(--gold-light);border-color:rgba(201,130,10,.3);font-size:12px;margin-bottom:.6rem;">
+    ⚠️ <strong>Catatan metodologis:</strong> Formula Flesch dan Fog Index dirancang untuk Bahasa Inggris. Gunakan hasilnya sebagai <em>estimasi relatif</em> antar teks — bukan skor absolut untuk Bahasa Indonesia.${fkRaw<0?' Nilai raw negatif ('+fkRaw.toFixed(1)+') dikliping ke 0, menunjukkan teks sangat kompleks.':''}
+  </div>
+  <div class="info-box" style="background:var(--teal-light);border-color:rgba(11,122,117,.2)"><strong>Interpretasi AWK:</strong> Keterbacaan rendah menunjukkan teks menargetkan audiens terdidik — relevan untuk analisis eksklusi sosial dalam wacana. Kalimat panjang dan leksikon kompleks seringkali digunakan untuk mengurangi akses publik atas informasi.</div>`;
+  document.getElementById('readability-out').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// ★ DISPERSION PLOT (NEW v4)
+// ═══════════════════════════════════════════════════════
+function runDispersion(){
+  const wordInput=document.getElementById('disp-words').value.trim();
+  const words=wordInput?wordInput.split(',').map(w=>w.trim().toLowerCase()).filter(Boolean):getFiltered().slice(0,6).filter((v,i,a)=>a.indexOf(v)===i);
+  if(!words.length||!tokens.length){document.getElementById('dispersion-out').innerHTML=empty('Masukkan kata atau analisis korpus dulu.');return;}
+  const N=tokens.length;
+  lastDisp=words.map(word=>{const positions=tokens.map((t,i)=>t===word?i:-1).filter(i=>i>=0);return{word,positions,count:positions.length};});
+  let html=`<p class="res-count">Distribusi ${words.length} kata di sepanjang ${N.toLocaleString()} token</p><div class="disp-wrap">`;
+  lastDisp.forEach(({word,positions,count})=>{
+    const marks=positions.map(p=>`<div class="disp-mark" style="left:${(p/N*100).toFixed(2)}%"></div>`).join('');
+    html+=`<div class="disp-row"><div class="disp-label">${word} <span style="color:var(--ink-muted);font-size:10px">(${count})</span></div><div class="disp-track">${marks}</div></div>`;
+  });
+  html+='</div><p style="font-size:10.5px;color:var(--ink-muted);font-family:\'DM Mono\',monospace;margin-top:.5rem;">Setiap garis vertikal = 1 kemunculan kata di posisi tersebut dalam teks</p>';
+  document.getElementById('dispersion-out').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// COMPARE
+// ═══════════════════════════════════════════════════════
+function runCompare(){
+  if(!tokensA.length||!tokensB.length){const a=document.getElementById('corpus-a').value.trim(),b=document.getElementById('corpus-b').value.trim();if(!a||!b){document.getElementById('compare-out').innerHTML=empty('Masukkan dua korpus di sidebar tab Bandingkan.');return;}tokensA=tokenize(a);tokensB=tokenize(b);rawA=a;rawB=b;}
+  const fA=freqMap(getFiltered(tokensA)),fB=freqMap(getFiltered(tokensB));
+  const setA=new Set(Object.keys(fA)),setB=new Set(Object.keys(fB));
+  const shared=[...setA].filter(w=>setB.has(w));
+  const onlyA=[...setA].filter(w=>!setB.has(w)).sort((a,b)=>(fA[b]||0)-(fA[a]||0)).slice(0,15);
+  const onlyB=[...setB].filter(w=>!setA.has(w)).sort((a,b)=>(fB[b]||0)-(fB[a]||0)).slice(0,15);
+  const topShared=shared.sort((a,b)=>(fA[b]+fB[b])-(fA[a]+fB[a])).slice(0,15);
+  lastCompare=[...topShared.map(w=>({word:w,freqA:fA[w]||0,freqB:fB[w]||0,status:'bersama'})),...onlyA.map(w=>({word:w,freqA:fA[w]||0,freqB:0,status:'hanya A'})),...onlyB.map(w=>({word:w,freqA:0,freqB:fB[w]||0,status:'hanya B'}))];
+  const statA=`Token: ${tokensA.length} · Tipe: ${setA.size} · TTR: ${(setA.size/tokensA.length*100).toFixed(1)}%`;
+  const statB=`Token: ${tokensB.length} · Tipe: ${setB.size} · TTR: ${(setB.size/tokensB.length*100).toFixed(1)}%`;
+  let html=`<div class="compare-grid"><div class="compare-col"><div class="compare-col-hd a">Korpus A</div><div class="compare-col-body"><p style="font-size:11px;color:var(--ink-muted);font-family:'DM Mono',monospace;margin-bottom:.5rem;">${statA}</p><p style="font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;margin-bottom:.3rem;">UNIK A</p>${onlyA.map(w=>`<div class="diff-row"><span class="wrd">${w}</span><span class="diff-only">${fA[w]}</span></div>`).join('')}</div></div><div class="compare-col"><div class="compare-col-hd b">Korpus B</div><div class="compare-col-body"><p style="font-size:11px;color:var(--ink-muted);font-family:'DM Mono',monospace;margin-bottom:.5rem;">${statB}</p><p style="font-size:10px;color:var(--ink-muted);font-family:'DM Mono',monospace;margin-bottom:.3rem;">UNIK B</p>${onlyB.map(w=>`<div class="diff-row"><span class="wrd">${w}</span><span class="diff-only">${fB[w]}</span></div>`).join('')}</div></div></div><p style="font-size:11px;font-family:'DM Mono',monospace;color:var(--ink-muted);margin-bottom:.5rem;">KATA BERSAMA — top 15</p><div class="tbl-wrap"><table><thead><tr><th>Kata</th><th>Frek A</th><th>Frek B</th><th>Selisih</th></tr></thead><tbody>`;
+  topShared.forEach(w=>{const diff=Math.abs((fA[w]||0)-(fB[w]||0)),dom=(fA[w]||0)>(fB[w]||0)?'A':'B';html+=`<tr><td class="wrd">${w}</td><td><span class="cnt" style="background:var(--teal-light);color:var(--teal)">${fA[w]||0}</span></td><td><span class="cnt" style="background:var(--violet-light);color:var(--violet)">${fB[w]||0}</span></td><td style="font-size:11.5px;color:var(--ink-muted)">+${diff} (${dom})</td></tr>`;});
+  document.getElementById('compare-out').innerHTML=html+'</tbody></table></div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// NETWORK
+// ═══════════════════════════════════════════════════════
+function runNetwork(){
+  const maxN=parseInt(document.getElementById('net-nodes').value)||40,win=parseInt(document.getElementById('net-win').value)||3;
+  const filtered=getFiltered();if(filtered.length<5)return;
+  const freq=freqMap(filtered),topWords=new Set(Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,maxN).map(e=>e[0]));
+  const edges={};
+  for(let i=0;i<tokens.length;i++){if(!topWords.has(tokens[i]))continue;for(let j=i+1;j<=Math.min(tokens.length-1,i+win);j++){if(!topWords.has(tokens[j]))continue;const key=[tokens[i],tokens[j]].sort().join('|||');edges[key]=(edges[key]||0)+1;}}
+  const nodes=[...topWords].map(id=>({id,freq:freq[id]||1}));
+  const links=Object.entries(edges).filter(([,v])=>v>0).map(([k,v])=>{const[s,t]=k.split('|||');return{source:s,target:t,value:v};});
+  const svg=document.getElementById('network-svg');
+  const W=svg.clientWidth||700,H=400;
+  svg.innerHTML='';
+  const svgEl=d3.select('#network-svg').attr('viewBox',`0 0 ${W} ${H}`);
+  const maxFreq=Math.max(...nodes.map(n=>n.freq));
+  const colorScale=d3.scaleOrdinal(['#0b7a75','#5c3d8f','#c9820a','#b5334a','#1a5276','#0e6655']);
+  let selectedNode=null;
+  const sim=d3.forceSimulation(nodes).force('link',d3.forceLink(links).id(d=>d.id).distance(65).strength(0.3)).force('charge',d3.forceManyBody().strength(-110)).force('center',d3.forceCenter(W/2,H/2)).force('collision',d3.forceCollide().radius(d=>11+Math.sqrt(d.freq/maxFreq)*13));
+  const link=svgEl.append('g').selectAll('line').data(links).enter().append('line').attr('class','link').attr('stroke-width',d=>Math.min(4,1+d.value*0.3));
+  const node=svgEl.append('g').selectAll('g').data(nodes).enter().append('g')
+    .call(d3.drag().on('start',(e,d)=>{if(!e.active)sim.alphaTarget(.3).restart();d.fx=d.x;d.fy=d.y;}).on('drag',(e,d)=>{d.fx=e.x;d.fy=e.y;}).on('end',(e,d)=>{if(!e.active)sim.alphaTarget(0);d.fx=null;d.fy=null;}))
+    .on('click',function(e,d){
+      selectedNode=selectedNode===d.id?null:d.id;
+      node.select('circle').attr('opacity',n=>!selectedNode||n.id===selectedNode||links.some(l=>(l.source.id===selectedNode&&l.target.id===n.id)||(l.target.id===selectedNode&&l.source.id===n.id))?1:0.2);
+      link.attr('opacity',l=>!selectedNode||l.source.id===selectedNode||l.target.id===selectedNode?1:0.1);
+    });
+  node.append('circle').attr('r',d=>7+Math.sqrt(d.freq/maxFreq)*11).attr('fill',d=>colorScale(d.id)).attr('stroke','white').attr('stroke-width',1.5);
+  node.append('text').attr('dy','.35em').attr('x',d=>10+Math.sqrt(d.freq/maxFreq)*11).text(d=>d.id).attr('fill','var(--ink)').style('font-family','DM Mono,monospace').style('font-size','10.5px').style('pointer-events','none');
+  svgEl.call(d3.zoom().scaleExtent([0.3,3]).on('zoom',e=>{svgEl.selectAll('g').attr('transform',e.transform);}));
+  sim.on('tick',()=>{link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);node.attr('transform',d=>`translate(${d.x},${d.y})`);});
+}
+function exportNetworkSVG(){
+  const svg=document.getElementById('network-svg');
+  const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='network-graph.svg';a.click();URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+// HEATMAP
+// ═══════════════════════════════════════════════════════
+function runHeatmap(){
+  const wordInput=document.getElementById('hm-words').value.trim(),numSegs=parseInt(document.getElementById('hm-segs').value)||10;
+  let words=wordInput?wordInput.split(',').map(w=>w.trim().toLowerCase()).filter(Boolean):getFiltered().slice(0,8).filter((v,i,a)=>a.indexOf(v)===i);
+  words=words.slice(0,12);if(!words.length){document.getElementById('heatmap-out').innerHTML=empty('Masukkan kata.');return;}
+  const segSize=Math.max(1,Math.floor(tokens.length/numSegs)),segs=[];
+  for(let i=0;i<numSegs;i++)segs.push(tokens.slice(i*segSize,(i+1)*segSize));
+  const data=segs.map(seg=>{const f=freqMap(seg);return words.map(w=>f[w]||0);});
+  const globalMax=Math.max(...data.flat(),1);
+  const COLORS=['#e0f5f4','#9bdcd8','#3aafa9','#0b7a75','#085f5b','#043a38'];
+  function gc(v){return COLORS[Math.min(COLORS.length-1,Math.floor(v/globalMax*(COLORS.length)))];}
+  function tc(v){return v/globalMax>0.5?'white':'var(--ink-muted)';}
+  let html='<div class="hm-wrap">';
+  html+=`<div style="display:grid;grid-template-columns:50px repeat(${words.length},1fr);gap:2px;margin-bottom:2px;"><div></div>`;
+  words.forEach(w=>{html+=`<div style="font-size:9.5px;font-family:'DM Mono',monospace;color:var(--ink-muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px;">${w}</div>`;});
+  html+='</div>';
+  data.forEach((row,si)=>{html+=`<div style="display:grid;grid-template-columns:50px repeat(${words.length},1fr);gap:2px;margin-bottom:2px;"><div style="font-size:9.5px;font-family:'DM Mono',monospace;color:var(--ink-muted);display:flex;align-items:center;">S${si+1}</div>`;row.forEach(v=>{html+=`<div title="${v}" style="height:24px;background:${gc(v)};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-family:'DM Mono',monospace;color:${tc(v)};">${v||''}</div>`;});html+='</div>';});
+  html+='</div><p style="font-size:10px;color:var(--ink-muted);font-family:\'DM Mono\',monospace;margin-top:.4rem;">S = segmen · warna gelap = frekuensi tinggi</p>';
+  document.getElementById('heatmap-out').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// TIMELINE
+// ═══════════════════════════════════════════════════════
+function runTimeline(){
+  const patterns=[/\b(\d{1,2})\s*(Januari|Februari|Maret|April|Mei|Juni|Juli|Agustus|September|Oktober|November|Desember)\s*(\d{4})\b/gi,/\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s*(\d{4})\b/gi,/\b(\d{4})\b/g,/\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g];
+  lastTimeline=[];const seen=new Set();
+  sentences.forEach(sent=>{let found=null;for(const pat of patterns){const m=sent.match(pat);if(m&&m[0]){found=m[0];break;}}if(found&&!seen.has(sent.slice(0,60))){seen.add(sent.slice(0,60));const s=scoreSent(sent);lastTimeline.push({date:found,text:sent.trim(),cls:s.cls,label:s.label});}});
+  if(!lastTimeline.length){document.getElementById('timeline-out').innerHTML=`<div class="info-box">Tidak ada penanda waktu ditemukan. Timeline bekerja terbaik pada teks yang mengandung tanggal eksplisit.</div>`;return;}
+  document.getElementById('timeline-out').innerHTML=`<p class="res-count">${lastTimeline.length} peristiwa temporal</p><div class="timeline">`+lastTimeline.map(({date,text,cls,label})=>`<div class="tl-item"><div class="tl-dot ${cls}"></div><div class="tl-date">${date} <span class="spill pill-${cls}">${label}</span></div><div class="tl-txt">${escapeHtml(text.slice(0,200))}${text.length>200?'…':''}</div></div>`).join('')+'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+// GEO
+// ═══════════════════════════════════════════════════════
+function runGeo(){
+  const found={};
+  Object.keys(GEO_ID).forEach(place=>{const re=new RegExp('\\b'+place+'\\b','gi');const m=rawText.match(re);if(m)found[place]=(found[place]||0)+m.length;});
+  lastGeo=Object.entries(found).sort((a,b)=>b[1]-a[1]);
+  if(!lastGeo.length){document.getElementById('geo-out').innerHTML=empty('Tidak ada nama wilayah terdeteksi.');return;}
+  const maxC=lastGeo[0][1],colors=['#0b7a75','#3aafa9','#5c3d8f','#c9820a','#b5334a','#1a5276'];
+  let html='<div class="geo-wrap"><div class="geo-map-area"><div class="geo-map-lbl">Sebaran wilayah terdeteksi</div><svg viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;"><rect width="500" height="280" fill="#dbeeff" rx="6"/><text x="250" y="140" text-anchor="middle" fill="#a8b5c2" font-size="12" font-family="DM Mono,monospace">Peta Sebaran</text>';
+  lastGeo.slice(0,15).forEach(([place,cnt],i)=>{const coords=GEO_ID[place];if(!coords)return;const[lat,lng]=coords,x=((parseFloat(lng)-95)/(141-95))*480+10,y=(280-(parseFloat(lat)+11)/(11+6)*260),r=Math.max(5,Math.min(18,5+(cnt/maxC)*13)),col=colors[i%colors.length];html+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${col}" opacity="0.75" stroke="white" stroke-width="1.5"><title>${place}: ${cnt}x</title></circle>`;if(r>7)html+=`<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="middle" fill="white" font-size="8.5" font-family="DM Mono,monospace">${place.slice(0,6)}</text>`;});
+  html+='</svg></div><div class="geo-list-area">'+lastGeo.slice(0,20).map(([place,cnt],i)=>`<div class="geo-item"><div class="geo-dot" style="background:${colors[i%colors.length]}"></div><div><div class="geo-name">${place}</div><div style="height:3px;border-radius:2px;background:${colors[i%colors.length]};width:${Math.round(cnt/maxC*100)}%;margin-top:3px;"></div></div><div class="geo-cnt">${cnt}x</div></div>`).join('')+'</div></div>';
+  document.getElementById('geo-out').innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════════════
+// STOPWORD MANAGER
+// ═══════════════════════════════════════════════════════
+function renderSWTags(){const custom=[...SW_CUSTOM].filter(w=>!SW_DEFAULT.has(w));document.getElementById('sw-tags').innerHTML=custom.length?custom.map(w=>`<span class="sw-tag">${w}<button onclick="removeSW('${w}')">×</button></span>`).join(''):'<span style="font-size:10.5px;color:var(--ink-muted);">Belum ada kustom</span>';}
+function toggleSW(){const b=document.getElementById('sw-body'),a=document.getElementById('sw-arrow');b.classList.toggle('open');a.textContent=b.classList.contains('open')?'▾':'▸';renderSWTags();}
+function addSW(){const inp=document.getElementById('sw-input'),w=inp.value.trim().toLowerCase();if(w){SW_CUSTOM.add(w);inp.value='';renderSWTags();}}
+function removeSW(w){SW_CUSTOM.delete(w);renderSWTags();}
+function resetSW(){SW_CUSTOM=new Set([...SW_DEFAULT]);renderSWTags();}
+
+// ═══════════════════════════════════════════════════════
+// ★ POS TAGGING — Part-of-Speech (NEW v4.1)
+// ═══════════════════════════════════════════════════════
+const POS_RULES={
+  NN:{name:'Nomina',color:'#0b7a75',bg:'#e0f5f4',
+    prefixes:['ke','per','pen','peng','pem','pe','penge'],
+    suffixes:['an','kan','asi','isme','isasi','itas','ologi','ifikasi'],
+    patterns:[/^(ke\w+an|per\w+an|pen\w+an|pem\w+an|pe\w+an)$/i],
+    words:['orang','anak','ibu','bapak','kota','negara','bangsa','rakyat','masyarakat','pemerintah','kebijakan','undang','peraturan','hukum','lembaga','institusi','organisasi','partai','media','berita','wacana','bahasa','teks','diskursus','ideologi','kekuasaan','hegemoni','dominasi','resistensi','identitas','budaya','nilai','norma','sistem','struktur','proses','perubahan','konflik','masalah','solusi','pendidikan','kesehatan','ekonomi','politik','sosial','gender','ras','kelas','etnik','agama','tradisi','modernitas','globalisasi','demokrasi','hak','kewajiban','keadilan','kesejahteraan','kemiskinan','ketimpangan','representasi']},
+  VB:{name:'Verba',color:'#5c3d8f',bg:'#ede8f8',
+    prefixes:['me','men','meng','mem','mempel','menge','ber','ter','di','ke'],
+    suffixes:['kan','i','lah'],
+    patterns:[/^(me\w+|ber\w+|di\w+|ter\w+)$/i],
+    words:['adalah','ada','jadi','menjadi','membuat','melakukan','menggunakan','mengatakan','menyatakan','menunjukkan','menjelaskan','menganalisis','mengidentifikasi','membangun','mengonstruksi','merepresentasikan','mendominasi','menghegemoni','memproduksi','mereproduksi','mengeksklusi','menginklusi','memarginalkan','membungkam','melegitimasi','mendelegitimasi','mengkritisi','mengungkap','membongkar','mempertanyakan','menantang','menolak','menerima','mendukung','menentang','melawan','berjuang','berubah','bertransformasi','bernegosiasi','berkomunikasi','berinteraksi','berdiskusi','mengatur','mengontrol','menguasai']},
+  JJ:{name:'Adjektiva',color:'#c9820a',bg:'#fef3dc',
+    prefixes:['ter','se'],
+    suffixes:['i','wi','iah','if','al','is'],
+    patterns:[],
+    words:['besar','kecil','tinggi','rendah','baik','buruk','positif','negatif','kritis','dominan','hegemonik','ideologis','diskursif','sosial','politik','ekonomi','budaya','historis','kontekstual','relevan','signifikan','penting','utama','primer','sekunder','formal','informal','resmi','tidak resmi','publik','privat','nasional','lokal','global','modern','tradisional','progresif','konservatif','liberal','otoriter','demokratis','represif','emansipatoris','transformatif','normatif','deskriptif','preskriptif','kuat','lemah','aktif','pasif','eksplisit','implisit','tersembunyi','terbuka','kompleks','sederhana','sistematis','kritis']},
+  RB:{name:'Adverbia',color:'#b5334a',bg:'#fdeaed',
+    prefixes:['se'],
+    suffixes:['nya','kali','pun'],
+    patterns:[],
+    words:['sangat','amat','lebih','paling','cukup','agak','terlalu','hampir','selalu','sering','kadang','jarang','tidak','belum','sudah','sedang','akan','pernah','hanya','saja','juga','pun','bahkan','justru','malah','memang','tentunya','tentu','jelas','nyata','sebenarnya','sesungguhnya','pada dasarnya','secara','dengan cara','melalui','berdasarkan','sesuai','menurut']},
+  PR:{name:'Pronomina',color:'#1a7a3c',bg:'#e6f7ed',
+    prefixes:[],suffixes:[],patterns:[],
+    words:['saya','aku','kamu','anda','dia','ia','kami','kita','mereka','kalian','ini','itu','sini','situ','sana','siapa','apa','mana','yang','yang mana','sesuatu','seseorang','setiap','semua','masing-masing','para','berbagai']},
+  CC:{name:'Konjungsi',color:'#185fa5',bg:'#e6f1fb',
+    prefixes:[],suffixes:[],patterns:[],
+    words:['dan','atau','tetapi','namun','tapi','melainkan','bahkan','serta','juga','pun','sedangkan','padahal','meskipun','walaupun','sekalipun','kendati','karena','sebab','sehingga','akibatnya','maka','agar','supaya','jika','apabila','bila','kalau','ketika','saat','sewaktu','setelah','sebelum','selama','sejak','semenjak','hingga','sampai','lalu','kemudian','selanjutnya','akhirnya','pertama','kedua','ketiga']},
+  IN:{name:'Preposisi',color:'#888780',bg:'#f1efe8',
+    prefixes:[],suffixes:[],patterns:[],
+    words:['di','ke','dari','pada','dalam','oleh','dengan','untuk','tentang','mengenai','terhadap','kepada','bagi','antara','melalui','berdasarkan','sesuai','menurut','berkaitan','terkait','sehubungan','atas','bawah','depan','belakang','luar','dalam','atas','bawah','sejak','selama','hingga']}
+};
+let lastPOS=[];
+
+function detectPOS(word){
+  const w=word.toLowerCase();
+  for(const [tag,rule] of Object.entries(POS_RULES)){if(rule.words.includes(w))return tag;}
+  for(const [tag,rule] of Object.entries(POS_RULES)){for(const pat of rule.patterns||[])if(pat.test(w))return tag;}
+  if(/^[A-Z]/.test(word))return'NNP';
+  if(/^\d/.test(word))return'CD';
+  for(const[tag,rule]of Object.entries(POS_RULES)){for(const suf of rule.suffixes||[])if(w.endsWith(suf)&&w.length>suf.length+2)return tag;}
+  for(const[tag,rule]of Object.entries(POS_RULES)){for(const pre of rule.prefixes||[])if(w.startsWith(pre)&&w.length>pre.length+2)return tag;}
+  return'NN';
+}
+
+// Frasa Nominal AWK — unit makna penting untuk analisis wacana
+const AWK_NP={'analisis wacana kritis':'NP-AWK','analisis wacana':'NP-AWK','wacana kritis':'NP-AWK','wacana dominan':'NP-AWK','relasi kuasa':'NP-AWK','relasi kekuasaan':'NP-AWK','kekuasaan simbolik':'NP-AWK','ideologi dominan':'NP-AWK','praktik diskursif':'NP-AWK','praktik sosial':'NP-AWK','konstruksi sosial':'NP-AWK','realitas sosial':'NP-AWK','kelompok minoritas':'NP-AWK','media massa':'NP-AWK','opini publik':'NP-AWK','literasi kritis':'NP-AWK','kesadaran kritis':'NP-AWK','keadilan sosial':'NP-AWK','eksklusi sosial':'NP-AWK','representasi media':'NP-AWK','framing media':'NP-AWK','hegemoni budaya':'NP-AWK','dominasi simbolik':'NP-AWK','subjek sosial':'NP-AWK','aktor sosial':'NP-AWK','identitas sosial':'NP-AWK'};
+
+function runPOS(){
+  if(!tokens.length){document.getElementById('pos-out').innerHTML=empty('Analisis korpus dulu.');return;}
+  const view=document.getElementById('pos-view').value;
+  const filterTag=document.getElementById('pos-filter').value;
+  // Deteksi frasa nominal AWK dari teks asli
+  const phraseMatches={};
+  Object.keys(AWK_NP).forEach(ph=>{const m=rawText.match(new RegExp('\\b'+ph+'\\b','gi'))||[];if(m.length)phraseMatches[ph]=m.length;});
+  const rawWords=rawText.replace(/\n+/g,' ').split(/\s+/).filter(w=>w.length>1&&/[a-zA-ZÀ-ÿ]/.test(w)).slice(0,500);
+  lastPOS=rawWords.map(w=>{const clean=w.replace(/[^a-zA-ZÀ-ÿ]/g,'');return{word:clean,orig:w,tag:detectPOS(clean)};});
+  const counts={};lastPOS.forEach(({tag})=>{counts[tag]=(counts[tag]||0)+1;});
+  const posTotal=lastPOS.length;
+  const allRules={...POS_RULES,NNP:{name:'Nama Diri',color:'#0e6655',bg:'#e6f7ed'},CD:{name:'Numeralia',color:'#7d3c98',bg:'#f5eef8'},'NP-AWK':{name:'Frasa Nominal AWK',color:'#0b7a75',bg:'#e0f5f4'}};
+  const smallWarn=tokens.length<5000?`<div class="info-box" style="margin-bottom:.75rem;">⚠️ Korpus kecil (${tokens.length} token) — POS tagging pada 500 token pertama saja. Untuk analisis lebih akurat, gunakan minimal 5.000 token.</div>`:'';
+  const phraseHtml=Object.keys(phraseMatches).length?`<div style="margin-bottom:.9rem;background:var(--teal-light);border:1px solid rgba(11,122,117,.2);border-radius:var(--r);padding:.75rem"><p style="font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:var(--teal);margin-bottom:.5rem;">Frasa Nominal AWK Terdeteksi (${Object.keys(phraseMatches).length} frasa)</p><div>${Object.entries(phraseMatches).sort((a,b)=>b[1]-a[1]).map(([ph,c])=>`<span class="topic-word" style="background:var(--teal-light);color:var(--teal);border-color:rgba(11,122,117,.3)">${ph} <span style="font-size:10px;opacity:.7">(${c}×)</span></span>`).join('')}</div></div>`:'';
+  if(view==='summary'){
+    let html=smallWarn+phraseHtml+'<div class="pos-summary">';
+    Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([tag,cnt])=>{
+      const r=allRules[tag]||{name:tag,color:'#888',bg:'#f0f0f0'};
+      html+=`<div class="pos-card"><span class="pos-tag" style="background:${r.bg};color:${r.color}">${tag}</span><div class="pos-num" style="color:${r.color}">${cnt}</div><div class="pos-lbl">${r.name}<br><span style="font-size:10px">${(cnt/posTotal*100).toFixed(1)}%</span></div></div>`;
+    });
+    html+='</div><div class="chart-wrap"><canvas id="pos-chart"></canvas></div>';
+    document.getElementById('pos-out').innerHTML=html;
+    const tags=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+    new Chart(document.getElementById('pos-chart'),{type:'bar',data:{labels:tags.map(t=>(allRules[t]||{name:t}).name),datasets:[{label:'Jumlah',data:tags.map(t=>counts[t]),backgroundColor:tags.map(t=>(allRules[t]||{bg:'#ccc'}).bg),borderColor:tags.map(t=>(allRules[t]||{color:'#888'}).color),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10}}}}}});
+  }else if(view==='tagged'){
+    let html=smallWarn+phraseHtml+'<div class="pos-tagged-text">';
+    lastPOS.forEach(({word,tag})=>{const r=allRules[tag]||{color:'#888',bg:'#f0f0f0'};const show=filterTag==='all'||tag===filterTag;html+=`<span class="pos-token" title="${(allRules[tag]||{name:tag}).name}">${escapeHtml(word)}<sup style="background:${r.bg};color:${r.color};${!show?'opacity:.25':''}">${tag}</sup></span> `;});
+    html+='</div><p style="font-size:10px;color:var(--ink-muted);font-family:\'DM Mono\',monospace;margin-top:.4rem;">Menampilkan 500 token pertama · hover untuk nama kelas kata</p>';
+    document.getElementById('pos-out').innerHTML=html;
+  }else{
+    const filtered2=filterTag==='all'?lastPOS:lastPOS.filter(p=>p.tag===filterTag);
+    const grouped={};filtered2.forEach(({word,tag})=>{if(!grouped[tag])grouped[tag]=new Map();grouped[tag].set(word,(grouped[tag].get(word)||0)+1);});
+    let html=smallWarn+phraseHtml;
+    Object.entries(grouped).sort((a,b)=>b[1].size-a[1].size).forEach(([tag,wordMap])=>{
+      const r=allRules[tag]||{name:tag,color:'#888',bg:'#f0f0f0'};
+      const sorted=[...wordMap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,20);
+      html+=`<div style="margin-bottom:.9rem;"><p style="font-size:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.08em;color:${r.color};margin-bottom:.4rem;">${tag} — ${r.name} (${wordMap.size} tipe)</p><div class="tbl-wrap"><table><thead><tr><th>#</th><th>Kata</th><th>Frekuensi</th><th>Distribusi</th></tr></thead><tbody>`;
+      const maxF=sorted[0]?.[1]||1;
+      sorted.forEach(([w,c],i)=>{html+=`<tr><td class="rnk">${i+1}</td><td class="wrd">${w}</td><td><span class="cnt">${c}</span></td><td><div class="bar-row"><div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxF*100)}%;background:${r.color}"></div></div></div></td></tr>`;});
+      html+='</tbody></table></div></div>';
+    });
+    document.getElementById('pos-out').innerHTML=html||empty('Tidak ada data.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ★ SESSION HISTORY — Multi-sesi dengan localStorage (NEW v4.1)
+// ═══════════════════════════════════════════════════════
+const SESSION_KEY='discourse_lens_sessions';
+
+function getSessions(){
+  try{return JSON.parse(LS.get(SESSION_KEY)||'[]');}catch{return[];}
+}
+function putSessions(list){
+  const ok=LS.set(SESSION_KEY,JSON.stringify(list.slice(0,10)));
+  if(!ok)console.warn('Tidak bisa menyimpan histori sesi — localStorage tidak tersedia');
+}
+function renderSessionHistory(){
+  const list=getSessions();
+  const box=document.getElementById('session-history-box');
+  const el=document.getElementById('session-history-list');
+  if(!list.length){box.style.display='none';return;}
+  box.style.display='block';
+  el.innerHTML=list.map((s,i)=>`
+    <div class="sess-item">
+      <div class="sess-info">
+        <div class="sess-name">${escapeHtml(s.name||'Sesi '+i)}</div>
+        <div class="sess-meta">${s.ts||''} · ${s.tokens||0} token</div>
+      </div>
+      <button class="sess-load" onclick="loadSessionFromHistory(${i})">Muat</button>
+      <button class="sess-del" onclick="deleteSession(${i})">×</button>
+    </div>`).join('');
+}
+function saveSession(){
+  if(!rawText){alert('Belum ada data untuk disimpan.');return;}
+  const name=prompt('Nama sesi ini:',`Sesi ${new Date().toLocaleDateString('id-ID')}`);
+  if(!name)return;
+  const session={name,rawText,rawA,rawB,annotations,annotLabels,customSW:[...SW_CUSTOM].filter(w=>!SW_DEFAULT.has(w)),tokens:tokens.length,ts:new Date().toLocaleString('id-ID')};
+  const list=getSessions();list.unshift(session);putSessions(list);
+  renderSessionHistory();
+  // juga unduh file JSON sebagai backup
+  const blob=new Blob([JSON.stringify(session,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`discourse-lens-${name.replace(/\s+/g,'-')}.json`;a.click();URL.revokeObjectURL(url);
+  alert(`Sesi "${name}" tersimpan di histori dan diunduh sebagai file backup.`);
+}
+function loadSessionFromHistory(idx){
+  const list=getSessions();const s=list[idx];if(!s)return;
+  applySession(s);alert(`Sesi "${s.name}" berhasil dimuat!`);
+}
+function deleteSession(idx){
+  const list=getSessions();list.splice(idx,1);putSessions(list);renderSessionHistory();
+}
+function applySession(s){
+  rawText=s.rawText||'';rawA=s.rawA||'';rawB=s.rawB||'';
+  annotations=s.annotations||[];annotLabels=s.annotLabels||annotLabels;
+  if(s.customSW)s.customSW.forEach(w=>SW_CUSTOM.add(w));
+  document.getElementById('corpus-text').value=rawText;
+  if(rawText){
+    tokens=tokenize(rawText);sentences=getSentences(rawText);updateStats(rawText);
+    document.getElementById('welcome').style.display='none';
+    document.getElementById('analysis-ui').style.display='block';
+    document.getElementById('embed-card').style.display='block';
+    loadAnnotText();runFreq();runTopic();runCloud();runSentiment();
+  }
+}
+function loadSession(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+  inp.onchange=function(e){
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();
+    r.onload=ev=>{
+      try{const s=JSON.parse(ev.target.result);applySession(s);renderSessionHistory();alert('Sesi berhasil dimuat dari file!');}
+      catch(err){alert('File sesi tidak valid: '+err.message);}
+    };r.readAsText(f);
+  };inp.click();
+}
+// Inisiasi histori saat halaman load
+document.addEventListener('DOMContentLoaded',renderSessionHistory);
+
+// ═══════════════════════════════════════════════════════
+// ★ EKSPOR LAPORAN OTOMATIS (NEW v4)
+// ═══════════════════════════════════════════════════════
+function exportFullReport(){
+  if(!rawText){alert('Analisis korpus dulu sebelum ekspor laporan.');return;}
+
+  // ── Jalankan semua analisis otomatis sebelum ekspor ──
+  const now=new Date().toLocaleString('id-ID');
+  const toks=tokens.length,types=new Set(tokens).size,sents=sentences.length;
+  const ttr=toks>0?(types/toks*100).toFixed(1):0;
+  const avgSentLen=sents>0?(toks/sents).toFixed(1):0;
+
+  // 1. Frekuensi top 30
+  const filteredF=getFiltered(),freq=freqMap(filteredF);
+  const top30=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,30);
+
+  // 2. Bigram top 15
+  const src2=tokens.filter(t=>!SW_CUSTOM.has(t));
+  const freq2={};for(let i=0;i<src2.length-1;i++){const g=src2[i]+' '+src2[i+1];freq2[g]=(freq2[g]||0)+1;}
+  const top15bi=Object.entries(freq2).sort((a,b)=>b[1]-a[1]).slice(0,15);
+
+  // 3. Sentimen semua kalimat
+  const allSentRes=sentences.map(s=>scoreSent(s));
+  const posC=allSentRes.filter(r=>r.cls==='pos').length;
+  const negC=allSentRes.filter(r=>r.cls==='neg').length;
+  const neuC=allSentRes.filter(r=>r.cls==='neu').length;
+  const posT=tokens.filter(t=>SENT_POS.has(t)).length;
+  const negT=tokens.filter(t=>SENT_NEG.has(t)).length;
+  const sentDetail=sentences.slice(0,80).map((s,i)=>({s:s.trim(),r:allSentRes[i]}));
+
+  // 4. Topik 5
+  const ranked5=Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(e=>e[0]);
+  const coWin=Math.max(3,Math.min(8,Math.floor(tokens.length/4)));
+  const topicColors=['#0b7a75','#5c3d8f','#c9820a','#b5334a','#1a5276'];
+  const topics5=[];const usedT=new Set();
+  const buckets5=[[],[],[],[],[]];
+  ranked5.forEach((w,i)=>{if(i<40)buckets5[i%5].push(w);});
+  for(let t=0;t<5;t++){
+    const seed=buckets5[t][0];if(!seed)continue;usedT.add(seed);
+    const co={};tokens.forEach((tok,i)=>{if(tok===seed)for(let j=Math.max(0,i-coWin);j<=Math.min(tokens.length-1,i+coWin);j++)if(j!==i&&!SW_CUSTOM.has(tokens[j])&&tokens[j].length>1)co[tokens[j]]=(co[tokens[j]]||0)+1;});
+    const merged=[...new Set([...Object.entries(co).sort((a,b)=>b[1]-a[1]).map(e=>e[0]).filter(w=>w!==seed),...buckets5[t].slice(1)])].slice(0,7);
+    topics5.push({seed,words:merged,color:topicColors[t]});
+  }
+
+  // 5. Narasi
+  const third=Math.ceil(sentences.length/3);
+  const awal=sentences.slice(0,third).join(' ');
+  const tengah=sentences.slice(third,third*2).join(' ');
+  const akhir=sentences.slice(third*2).join(' ');
+  function topSentRep(txt){return (getSentences(txt).filter(s=>s.trim().length>20).sort((a,b)=>b.length-a.length)[0])||'—';}
+  function topKataRep(txt,k=6){const tt=tokenize(txt).filter(t=>!SW_CUSTOM.has(t)&&t.length>2);const ff=freqMap(tt);return Object.entries(ff).sort((a,b)=>b[1]-a[1]).slice(0,k).map(e=>e[0]).join(', ')||'—';}
+  function sudutPandangRep(){let f1=0,f2=0,f3=0;tokens.forEach(t=>{if(['saya','aku','kami','kita','i','we'].includes(t))f1++;else if(['kamu','anda','kalian','you'].includes(t))f2++;else if(['dia','mereka','ia','they','he','she'].includes(t))f3++;});if(f1>f2&&f1>f3)return'Orang pertama (narator terlibat langsung)';if(f2>f1&&f2>f3)return'Orang kedua (mengarah ke pembaca)';return'Orang ketiga (narator mengamati dari luar)';}
+
+  // 6. NER otomatis
+  const nerP=NER_PERSONS.filter(p=>{const re=new RegExp('\\b'+p+'\\b','i');return re.test(rawText);});
+  const nerO=NER_ORGS.filter(o=>{const re=new RegExp('\\b'+o.replace(/[-\/]/g,'[-\\/]')+'\\b','i');return re.test(rawText);});
+  const nerPl=NER_PLACES.filter(p=>{const re=new RegExp('\\b'+p+'\\b','i');return re.test(rawText);});
+  const nerTimes=[];NER_TIME_PATTERNS.forEach(pat=>{const m=rawText.match(pat)||[];m.forEach(t=>{if(!nerTimes.includes(t.trim()))nerTimes.push(t.trim());});});
+
+  // 7. POS otomatis
+  const rawWords2=rawText.replace(/\n+/g,' ').split(/\s+/).filter(w=>w.length>1&&/[a-zA-ZÀ-ÿ]/.test(w)).slice(0,600);
+  const posTagged=rawWords2.map(w=>{const c=w.replace(/[^a-zA-ZÀ-ÿ]/g,'');return{word:c,tag:detectPOS(c)};});
+  const posCounts={};posTagged.forEach(({tag})=>{posCounts[tag]=(posCounts[tag]||0)+1;});
+  const posTotal2=posTagged.length;
+
+  // 8. Keyness otomatis
+  const targetFreqK=freqMap(getFiltered());
+  const targetTotalK=Object.values(targetFreqK).reduce((a,b)=>a+b,0);
+  const refTotalK=1000000;
+  function llScore(O1,O2,N1,N2){const E1=N1*(O1+O2)/(N1+N2)||.001,E2=N2*(O1+O2)/(N1+N2)||.001;const ll=2*(O1*Math.log(O1/E1+.001)+O2*Math.log(O2/E2+.001));return O1/N1>O2/N2?ll:-ll;}
+  const keynessTop=Object.entries(targetFreqK).filter(([w])=>!SW_CUSTOM.has(w)&&w.length>2&&targetFreqK[w]>=2).map(([w,O1])=>{const O2=Math.round((REF_FREQ[w]||0.0001)*refTotalK);return{w,O1,O2,ll:llScore(O1,O2,targetTotalK,refTotalK)};}).sort((a,b)=>Math.abs(b.ll)-Math.abs(a.ll)).slice(0,25);
+
+  // 9. Keterbacaan otomatis
+  const syllC=s=>{s=s.toLowerCase().replace(/[^a-zA-ZÀ-ÿ]/g,'');const v=s.match(/[aiueoàáâãäåèéêëìíîïòóôõöùúûüy]/gi)||[];return Math.max(1,v.length);};
+  const totalSyl=tokens.reduce((sum,w)=>sum+syllC(w),0);
+  const avgWPS=toks>0&&sents>0?(toks/sents).toFixed(1):0;
+  const avgSPW=toks>0?(totalSyl/toks).toFixed(2):0;
+  const fkEase=Math.min(100,Math.max(0,+(206.835-1.015*avgWPS-84.6*avgSPW).toFixed(1)));
+  const fkGrade=+(0.39*avgWPS+11.8*avgSPW-15.59).toFixed(1);
+  const fogIdx=+(0.4*(parseFloat(avgWPS)+(tokens.filter(w=>syllC(w)>=3).length/toks*100))).toFixed(1);
+  function fkLabel(s){if(s>=90)return'Sangat mudah';if(s>=70)return'Mudah';if(s>=60)return'Cukup';if(s>=50)return'Agak sulit';return'Sulit';}
+
+  // 10. Kolokasi (gunakan lastColloc jika ada, atau top 3 kata paling sering)
+  let collocData=lastColloc;
+  if(!collocData.length&&top30.length){
+    const pivot=top30[0][0];const N=tokens.length;const wFreq=freqMap(tokens);const wf=wFreq[pivot]||1;
+    const coF={};for(let i=0;i<tokens.length;i++)if(tokens[i]===pivot)for(let j=Math.max(0,i-4);j<=Math.min(tokens.length-1,i+4);j++)if(j!==i&&!SW_CUSTOM.has(tokens[j]))coF[tokens[j]]=(coF[tokens[j]]||0)+1;
+    collocData=Object.entries(coF).map(([w,cf])=>{const f2=wFreq[w]||1;const score=Math.log2((cf*N)/(wf*f2+1));return{w,cf,score};}).sort((a,b)=>b.score-a.score).slice(0,15);
+  }
+
+  // 11. Timeline & Geo (gunakan lastTimeline/lastGeo jika ada)
+  const tlData=lastTimeline.slice(0,20);
+  const geoData=lastGeo.slice(0,15);
+
+  // 12. Dispersi top 6 kata
+  const disp6=top30.slice(0,6).map(([word])=>{const positions=tokens.map((t,i)=>t===word?i:-1).filter(i=>i>=0);return{word,count:positions.length,positions};});
+
+  // 13. Anotasi
+  const annotSummary=annotLabels.map(l=>{const c=annotations.filter(a=>a.label===l.name).length;return c?{name:l.name,color:l.color,count:c}:null;}).filter(Boolean);
+
+  // ── BANGUN HTML LAPORAN LENGKAP ──
+  const CSS=`body{font-family:Arial,sans-serif;max-width:960px;margin:0 auto;padding:2rem;color:#1a1a2e;font-size:13.5px;line-height:1.7;}
+  h1{font-size:26px;color:#0b7a75;border-bottom:3px solid #0b7a75;padding-bottom:.6rem;margin-bottom:.5rem;}
+  h2{font-size:16px;color:#0b7a75;margin-top:2rem;padding:.5rem .85rem;background:#e0f5f4;border-left:4px solid #0b7a75;border-radius:0 6px 6px 0;}
+  h3{font-size:13.5px;color:#2c3e50;margin-top:1.1rem;font-weight:700;}
+  .sg{display:grid;gap:9px;margin:.7rem 0;}
+  .sg4{grid-template-columns:repeat(4,1fr)}.sg3{grid-template-columns:repeat(3,1fr)}.sg2{grid-template-columns:repeat(2,1fr)}
+  .sb{background:#e0f5f4;padding:.7rem;border-radius:7px;text-align:center;}
+  .sb.gold{background:#fef3dc;}.sb.rose{background:#fdeaed;}.sb.violet{background:#ede8f8;}
+  .sn{font-size:22px;font-weight:700;color:#0b7a75;}.sn.gold{color:#c9820a;}.sn.rose{color:#b5334a;}.sn.vio{color:#5c3d8f;}
+  .sl{font-size:10px;color:#6b7a8d;text-transform:uppercase;letter-spacing:.07em;}
+  table{width:100%;border-collapse:collapse;margin:.6rem 0;font-size:12.5px;}
+  th{background:#0b7a75;color:white;padding:6px 10px;text-align:left;font-size:11px;white-space:nowrap;}
+  td{padding:5px 10px;border-bottom:1px solid #e0f5f4;vertical-align:top;}
+  tr:nth-child(even) td{background:#f8f7f4;}
+  .tag{display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:500;margin:2px;}
+  .box{background:#fef3dc;border:1px solid #f0b429;padding:.7rem 1rem;border-radius:7px;margin:.6rem 0;font-size:12.5px;}
+  .box.teal{background:#e0f5f4;border-color:#3aafa9;}
+  .box.rose{background:#fdeaed;border-color:#e06070;}
+  .toc{background:#f8f7f4;border:1px solid #e0f5f4;border-radius:7px;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+  .toc a{color:#0b7a75;text-decoration:none;font-size:13px;}
+  .toc li{margin:.2rem 0;}
+  .pos-bar{display:flex;align-items:center;gap:7px;margin:3px 0;}
+  .pos-trk{flex:1;height:8px;background:#e0f5f4;border-radius:4px;overflow:hidden;}
+  .pos-fill{height:100%;border-radius:4px;}
+  .disp-trk{width:100%;height:14px;background:#f0ede6;border-radius:3px;position:relative;overflow:hidden;margin:2px 0;}
+  .disp-mk{position:absolute;top:2px;bottom:2px;width:3px;border-radius:1px;background:#0b7a75;}
+  .sent-pos{color:#0b7a75;font-weight:600;}.sent-neg{color:#b5334a;font-weight:600;}.sent-neu{color:#6b7a8d;}
+  .pg{page-break-after:always;}
+  footer{margin-top:2rem;padding-top:1rem;border-top:1px solid #e0f5f4;font-size:11px;color:#a8b5c2;text-align:center;}
+  @media print{body{padding:.75rem;font-size:12px;}.pg{page-break-after:always;}}`;
+
+  let html=`<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8">
+  <title>Laporan DiscourseLens — ${now}</title>
+  <style>${CSS}</style></head><body>
+  <h1>Laporan Analisis Korpus AWK</h1>
+  <p style="color:#6b7a8d;font-size:12px;margin-bottom:.25rem;">Digenerate: <strong>${now}</strong> · Platform: DiscourseLens v4.1 · See What Text Really Means</p>
+  <p style="color:#6b7a8d;font-size:12px;">Laporan ini berisi <strong>13 seksi analisis lengkap</strong> yang digenerate otomatis. Tekan Ctrl+P untuk cetak/simpan PDF.</p>
+
+  <div class="toc"><strong style="font-size:13px;color:#0b7a75;">Daftar Isi</strong>
+  <ol style="margin:.5rem 0 0 1rem;">
+    <li><a href="#s1">Statistik Korpus</a></li>
+    <li><a href="#s2">Frekuensi & N-gram</a></li>
+    <li><a href="#s3">Analisis Topik</a></li>
+    <li><a href="#s4">Kolokasi & Asosiasi</a></li>
+    <li><a href="#s5">Keyness Analysis</a></li>
+    <li><a href="#s6">Analisis Sentimen</a></li>
+    <li><a href="#s7">Analisis Narasi & Framing</a></li>
+    <li><a href="#s8">POS Tagging</a></li>
+    <li><a href="#s9">Deteksi Entitas (NER)</a></li>
+    <li><a href="#s10">Analisis Keterbacaan</a></li>
+    <li><a href="#s11">Dispersi Kata</a></li>
+    <li><a href="#s12">Timeline & Peta Geografis</a></li>
+    <li><a href="#s13">Anotasi Manual</a></li>
+  </ol></div>
+
+  <h2 id="s1">1. Statistik Korpus</h2>
+  <div class="sg sg4">
+    <div class="sb"><div class="sn">${toks.toLocaleString()}</div><div class="sl">Token</div></div>
+    <div class="sb"><div class="sn">${types.toLocaleString()}</div><div class="sl">Tipe unik</div></div>
+    <div class="sb"><div class="sn">${sents}</div><div class="sl">Kalimat</div></div>
+    <div class="sb"><div class="sn">${ttr}%</div><div class="sl">TTR</div></div>
+  </div>
+  <div class="sg sg4">
+    <div class="sb gold"><div class="sn gold">${avgWPS}</div><div class="sl">Kata/kalimat</div></div>
+    <div class="sb gold"><div class="sn gold">${avgSPW}</div><div class="sl">Suku kata/kata</div></div>
+    <div class="sb gold"><div class="sn gold">${(toks/Math.max(1,rawText.split(/\n+/).filter(p=>p.trim().length>10).length)).toFixed(0)}</div><div class="sl">Kata/paragraf</div></div>
+    <div class="sb gold"><div class="sn gold">${(types/toks*100).toFixed(1)}%</div><div class="sl">Kekayaan leksikal</div></div>
+  </div>
+  <h3>Cuplikan teks (300 karakter pertama)</h3>
+  <p style="background:#f8f7f4;padding:.75rem;border-radius:6px;font-family:monospace;font-size:12px;border:1px solid #e0f5f4;">${escapeHtml(rawText.slice(0,300))}${rawText.length>300?'...':''}</p>
+
+  <h2 id="s2">2. Frekuensi & N-gram</h2>
+  <h3>Unigram — 30 kata tertinggi (setelah penghapusan stopwords)</h3>
+  <table><tr><th>#</th><th>Kata</th><th>Frekuensi</th><th>% korpus</th><th>Distribusi relatif</th></tr>
+  ${top30.map(([w,c],i)=>{const pct=(c/toks*100).toFixed(2);const bar=Math.round(c/top30[0][1]*100);return`<tr><td>${i+1}</td><td><strong>${w}</strong></td><td>${c}</td><td>${pct}%</td><td><div style="width:${bar}%;height:6px;background:#0b7a75;border-radius:3px;min-width:2px;"></div></td></tr>`;}).join('')}</table>
+  <h3>Bigram — 15 pasangan kata tertinggi</h3>
+  <table><tr><th>#</th><th>Bigram</th><th>Frekuensi</th></tr>
+  ${top15bi.map(([g,c],i)=>`<tr><td>${i+1}</td><td><strong>${g}</strong></td><td>${c}</td></tr>`).join('')}</table>
+
+  <h2 id="s3">3. Analisis Topik</h2>
+  <p style="font-size:12.5px;color:#6b7a8d;margin-bottom:.5rem;">5 kluster topik berdasarkan ko-okurens kata:</p>
+  <div class="sg sg3">
+  ${topics5.map((th,i)=>`<div style="background:white;border:1px solid #e0f5f4;border-radius:8px;padding:.75rem;border-top:3px solid ${th.color}"><div style="font-size:10px;color:#6b7a8d;font-family:monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;">Topik ${i+1}</div><div style="font-size:16px;font-weight:700;color:${th.color};margin-bottom:6px;">${th.seed}</div><div style="display:flex;flex-wrap:wrap;gap:3px;">${th.words.map(w=>`<span style="font-size:11px;background:#f8f7f4;color:#2c3e50;padding:2px 7px;border-radius:100px;border:1px solid #e0f5f4;font-family:monospace;">${w}</span>`).join('')}</div></div>`).join('')}
+  </div>
+
+  <h2 id="s4">4. Kolokasi & Asosiasi</h2>
+  ${collocData.length?`<p style="font-size:12px;color:#6b7a8d;margin-bottom:.4rem;">Kolokasi untuk kata <strong>"${top30[0]?.[0]||'—'}"</strong> (MI score):</p>
+  <table><tr><th>#</th><th>Kolokat</th><th>Frek bersama</th><th>Skor MI</th><th>Kekuatan asosiasi</th></tr>
+  ${collocData.slice(0,15).map(({w,cf,score},i)=>{const bar=Math.round(Math.abs(score)/Math.abs(collocData[0].score)*100);return`<tr><td>${i+1}</td><td><strong>${w}</strong></td><td>${cf}</td><td>${score.toFixed(3)}</td><td><div style="width:${bar}%;height:6px;background:#0b7a75;border-radius:3px;min-width:2px;"></div></td></tr>`;}).join('')}</table>`
+  :'<p style="color:#6b7a8d;font-size:12.5px;">Jalankan tab Kolokasi di aplikasi untuk mendapatkan hasil kolokasi dengan kata target tertentu.</p>'}
+
+  <h2 id="s5">5. Keyness Analysis (Log-Likelihood G²)</h2>
+  <div class="box teal"><strong>Keyness</strong> mengukur kata yang secara statistik paling khas dalam korpus ini dibandingkan dengan frekuensi referensi Bahasa Indonesia umum. Nilai G² positif tinggi = sangat khas korpus ini; negatif = lebih umum dalam bahasa sehari-hari.</div>
+  <table><tr><th>#</th><th>Kata</th><th>Frek Target</th><th>Frek Ref (‰)</th><th>G² Score</th><th>Status</th></tr>
+  ${keynessTop.map(({w,O1,O2,ll},i)=>`<tr><td>${i+1}</td><td><strong>${w}</strong></td><td>${O1}</td><td>${(O2/refTotalK*1000).toFixed(2)}</td><td style="color:${ll>0?'#0b7a75':'#b5334a'};font-weight:600;">${ll>0?'+':''}${ll.toFixed(1)}</td><td><span class="tag" style="background:${ll>0?'#e0f5f4':'#fdeaed'};color:${ll>0?'#0b7a75':'#b5334a'}">${ll>0?'KHAS KORPUS':'KHAS UMUM'}</span></td></tr>`).join('')}</table>
+
+  <h2 id="s6">6. Analisis Sentimen</h2>
+  <div class="sg sg3">
+    <div class="sb"><div class="sn">${posC}</div><div class="sl">Kalimat positif</div></div>
+    <div class="sb rose"><div class="sn rose">${negC}</div><div class="sl">Kalimat negatif</div></div>
+    <div class="sb"><div class="sn" style="color:#6b7a8d">${neuC}</div><div class="sl">Kalimat netral</div></div>
+  </div>
+  <div class="sg sg2">
+    <div class="sb"><div class="sn">${posT}</div><div class="sl">Total kata positif</div></div>
+    <div class="sb rose"><div class="sn rose">${negT}</div><div class="sl">Total kata negatif</div></div>
+  </div>
+  <div class="box ${posT>negT?'teal':'rose'}">Orientasi wacana dominan: <strong>${posT>negT?'Positif / Konstruktif':'Negatif / Kritis'}</strong> · Rasio pos:neg = ${posT}:${negT}</div>
+  <h3>Detail per kalimat (50 pertama)</h3>
+  <table><tr><th>#</th><th>Kalimat</th><th>Sentimen</th></tr>
+  ${sentDetail.map(({s,r},i)=>`<tr><td>${i+1}</td><td>${escapeHtml(s.slice(0,150))}${s.length>150?'…':''}</td><td><span class="tag" style="background:${r.cls==='pos'?'#e0f5f4':r.cls==='neg'?'#fdeaed':'#f0ede6'};color:${r.cls==='pos'?'#0b7a75':r.cls==='neg'?'#b5334a':'#6b7a8d'}">${r.label}</span></td></tr>`).join('')}</table>
+
+  <h2 id="s7">7. Analisis Narasi & Framing</h2>
+  <div class="sg sg3">
+    <div style="background:#e0f5f4;border-radius:8px;padding:.85rem;border:1px solid rgba(11,122,117,.2)"><div style="font-size:9px;font-family:monospace;text-transform:uppercase;letter-spacing:.1em;color:#0b7a75;margin-bottom:4px;">AWAL / Orientasi</div><div style="font-size:12.5px;color:#2c3e50;line-height:1.5;">${escapeHtml(topSentRep(awal))}</div></div>
+    <div style="background:#fef3dc;border-radius:8px;padding:.85rem;border:1px solid rgba(201,130,10,.2)"><div style="font-size:9px;font-family:monospace;text-transform:uppercase;letter-spacing:.1em;color:#c9820a;margin-bottom:4px;">TENGAH / Komplikasi</div><div style="font-size:12.5px;color:#2c3e50;line-height:1.5;">${escapeHtml(topSentRep(tengah))}</div></div>
+    <div style="background:#ede8f8;border-radius:8px;padding:.85rem;border:1px solid rgba(92,61,143,.2)"><div style="font-size:9px;font-family:monospace;text-transform:uppercase;letter-spacing:.1em;color:#5c3d8f;margin-bottom:4px;">AKHIR / Resolusi</div><div style="font-size:12.5px;color:#2c3e50;line-height:1.5;">${escapeHtml(topSentRep(akhir))}</div></div>
+  </div>
+  <table><tr><th>Dimensi Narasi</th><th>Temuan</th></tr>
+    <tr><td><strong>Sudut pandang naratif</strong></td><td>${sudutPandangRep()}</td></tr>
+    <tr><td><strong>Framing dominan</strong></td><td>${posT>negT?'Positif / Konstruktif':'Negatif / Kritis'} (pos: ${posT}, neg: ${negT})</td></tr>
+    <tr><td><strong>Kata kunci — Awal</strong></td><td>${topKataRep(awal)} · Sentimen: ${scoreSent(awal).label}</td></tr>
+    <tr><td><strong>Kata kunci — Tengah</strong></td><td>${topKataRep(tengah)} · Sentimen: ${scoreSent(tengah).label}</td></tr>
+    <tr><td><strong>Kata kunci — Akhir</strong></td><td>${topKataRep(akhir)} · Sentimen: ${scoreSent(akhir).label}</td></tr>
+  </table>
+
+  <h2 id="s8">8. POS Tagging (Part-of-Speech)</h2>
+  <p style="font-size:12px;color:#6b7a8d;margin-bottom:.6rem;">Distribusi kelas kata dari ${posTagged.length} token (500 pertama):</p>
+  ${Object.entries(posCounts).sort((a,b)=>b[1]-a[1]).map(([tag,cnt])=>{
+    const r={NN:{name:'Nomina',color:'#0b7a75'},VB:{name:'Verba',color:'#5c3d8f'},JJ:{name:'Adjektiva',color:'#c9820a'},RB:{name:'Adverbia',color:'#b5334a'},PR:{name:'Pronomina',color:'#1a7a3c'},CC:{name:'Konjungsi',color:'#185fa5'},IN:{name:'Preposisi',color:'#888780'},NNP:{name:'Nama Diri',color:'#0e6655'},CD:{name:'Numeralia',color:'#7d3c98'}}[tag]||{name:tag,color:'#888'};
+    const pct=Math.round(cnt/posTotal2*100);
+    return`<div class="pos-bar"><span style="font-size:11px;font-family:monospace;min-width:30px;color:${r.color};font-weight:600;">${tag}</span><span style="font-size:11.5px;min-width:80px;color:#2c3e50;">${r.name}</span><div class="pos-trk"><div class="pos-fill" style="width:${pct}%;background:${r.color}"></div></div><span style="font-size:11px;font-family:monospace;color:#6b7a8d;min-width:70px;text-align:right;">${cnt} (${pct}%)</span></div>`;
+  }).join('')}
+
+  <h2 id="s9">9. Deteksi Entitas (NER)</h2>
+  <div class="sg sg2">
+    <div><h3>Tokoh / Orang (${nerP.length})</h3>${nerP.length?nerP.map(p=>`<span class="tag" style="background:#e8f4fd;color:#1565c0;border:1px solid #90caf9">${p}</span>`).join(''):'<p style="color:#6b7a8d;font-size:12.5px;">Tidak ada tokoh terdeteksi.</p>'}</div>
+    <div><h3>Organisasi / Institusi (${nerO.length})</h3>${nerO.length?nerO.map(o=>`<span class="tag" style="background:#fef3dc;color:#c9820a;border:1px solid #f9c95c">${o}</span>`).join(''):'<p style="color:#6b7a8d;font-size:12.5px;">Tidak ada organisasi terdeteksi.</p>'}</div>
+    <div><h3>Lokasi / Tempat (${nerPl.length})</h3>${nerPl.length?nerPl.map(p=>`<span class="tag" style="background:#e6f7ed;color:#1a7a3c;border:1px solid #81c784">${p}</span>`).join(''):'<p style="color:#6b7a8d;font-size:12.5px;">Tidak ada tempat terdeteksi.</p>'}</div>
+    <div><h3>Waktu / Periode (${nerTimes.length})</h3>${nerTimes.length?nerTimes.slice(0,20).map(t=>`<span class="tag" style="background:#ede8f8;color:#5c3d8f;border:1px solid #ce93d8">${t}</span>`).join(''):'<p style="color:#6b7a8d;font-size:12.5px;">Tidak ada penanda waktu terdeteksi.</p>'}</div>
+  </div>
+
+  <h2 id="s10">10. Analisis Keterbacaan</h2>
+  <div class="sg sg3">
+    <div class="sb"><div class="sn ${fkEase>60?'':'rose'}" style="color:${fkEase>60?'#0b7a75':'#b5334a'}">${fkEase}</div><div class="sl">Flesch Reading Ease</div><div style="font-size:12px;color:#6b7a8d;margin-top:3px;">${fkLabel(fkEase)}</div></div>
+    <div class="sb gold"><div class="sn gold">${fkGrade}</div><div class="sl">Flesch-Kincaid Grade</div><div style="font-size:12px;color:#6b7a8d;margin-top:3px;">Setara kelas ${fkGrade<=6?'SD':fkGrade<=9?'SMP':fkGrade<=12?'SMA':'Perguruan Tinggi'}</div></div>
+    <div class="sb ${fogIdx>12?'rose':''}"><div class="sn" style="color:${fogIdx>12?'#b5334a':'#0b7a75'}">${fogIdx}</div><div class="sl">Fog Index</div><div style="font-size:12px;color:#6b7a8d;margin-top:3px;">${fogIdx>12?'Sulit dibaca publik umum':'Dapat dibaca publik umum'}</div></div>
+  </div>
+  <div class="box">Rata-rata <strong>${avgWPS} kata/kalimat</strong> · <strong>${avgSPW} suku kata/kata</strong> · Kata polisilibi (≥3): <strong>${Math.round(tokens.filter(w=>syllC(w)>=3).length/toks*100)}%</strong><br>
+  <em>Interpretasi AWK: Keterbacaan rendah menunjukkan teks menargetkan audiens terdidik — relevan untuk analisis eksklusi sosial dan akses publik atas informasi.</em></div>
+
+  <h2 id="s11">11. Dispersi Kata (6 kata paling sering)</h2>
+  <p style="font-size:12px;color:#6b7a8d;margin-bottom:.5rem;">Setiap garis vertikal = 1 kemunculan kata di posisi tersebut dalam ${toks.toLocaleString()} token:</p>
+  ${disp6.map(({word,count,positions})=>`<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px;"><span style="font-size:11.5px;font-family:monospace;min-width:100px;color:#0b7a75;">${word} (${count})</span><div class="disp-trk">${positions.map(p=>`<div class="disp-mk" style="left:${(p/toks*100).toFixed(1)}%"></div>`).join('')}</div></div>`).join('')}
+
+  <h2 id="s12">12. Timeline & Peta Geografis</h2>
+  <h3>Timeline Kronologis</h3>
+  ${tlData.length?`<table><tr><th>Tanggal/Periode</th><th>Konteks kalimat</th><th>Sentimen</th></tr>${tlData.map(({date,text,label,cls})=>`<tr><td style="white-space:nowrap;font-family:monospace;font-size:12px;color:#0b7a75">${date}</td><td>${escapeHtml(text.slice(0,180))}${text.length>180?'…':''}</td><td><span class="tag" style="background:${cls==='pos'?'#e0f5f4':cls==='neg'?'#fdeaed':'#f0ede6'};color:${cls==='pos'?'#0b7a75':cls==='neg'?'#b5334a':'#6b7a8d'}">${label}</span></td></tr>`).join('')}</table>`
+  :'<p style="color:#6b7a8d;font-size:12.5px;">Jalankan tab Timeline di aplikasi untuk mendapatkan data kronologis.</p>'}
+  <h3>Sebaran Geografis</h3>
+  ${geoData.length?`<table><tr><th>#</th><th>Wilayah</th><th>Frekuensi</th></tr>${geoData.map(([place,cnt],i)=>`<tr><td>${i+1}</td><td><strong>${place}</strong></td><td>${cnt}</td></tr>`).join('')}</table>`
+  :'<p style="color:#6b7a8d;font-size:12.5px;">Jalankan tab Peta Geo di aplikasi untuk mendapatkan data sebaran wilayah.</p>'}
+
+  <h2 id="s13">13. Anotasi Manual</h2>
+  ${annotations.length?`
+  <div class="sg sg3" style="margin-bottom:.75rem;">
+  ${annotSummary.map(({name,color,count})=>`<div class="sb" style="background:${color}15;border:1px solid ${color}30"><div class="sn" style="color:${color}">${count}</div><div class="sl">${name}</div></div>`).join('')}
+  </div>
+  <table><tr><th>#</th><th>Label</th><th>Teks Teranotasi</th></tr>
+  ${annotations.map((a,i)=>`<tr><td>${i+1}</td><td><span class="tag" style="background:${a.color}20;color:${a.color};border:1px solid ${a.color}40">${a.label}</span></td><td>"${escapeHtml(a.text)}"</td></tr>`).join('')}</table>`
+  :'<p style="color:#6b7a8d;font-size:12.5px;">Belum ada anotasi manual. Gunakan tab Anotasi di aplikasi untuk memberi label pada segmen teks.</p>'}
+
+  <footer>DiscourseLens v4.1 · See What Text Really Means · AWK Research Platform<br>
+  Laporan digenerate otomatis pada ${now} · Semua analisis dilakukan di browser — tidak ada data dikirim ke server</footer>
+  </body></html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`laporan-DiscourseLens-${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT CSV
+// ═══════════════════════════════════════════════════════
+function exportCSV(type){
+  const map={
+    kwic:{check:()=>lastKWIC.length,data:()=>'Kiri,Kata Kunci,Kanan\n'+lastKWIC.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n'),fn:'kwic.csv'},
+    freq:{check:()=>lastFreq.length,data:()=>'Kata,Frekuensi\n'+lastFreq.map(([g,c])=>`"${g}",${c}`).join('\n'),fn:'frekuensi.csv'},
+    colloc:{check:()=>lastColloc.length,data:()=>'Kolokat,Frek,Skor\n'+lastColloc.map(({w,cf,score})=>`"${w}",${cf},${score.toFixed(4)}`).join('\n'),fn:'kolokasi.csv'},
+    sentiment:{check:()=>lastSent.length,data:()=>'Teks,Sentimen,Pos,Neg\n'+lastSent.map(({text,label,pos,neg})=>`"${text.replace(/"/g,"'")}","${label}",${pos},${neg}`).join('\n'),fn:'sentimen.csv'},
+    compare:{check:()=>lastCompare.length,data:()=>'Kata,Frek A,Frek B,Status\n'+lastCompare.map(({word,freqA,freqB,status})=>`"${word}",${freqA},${freqB},"${status}"`).join('\n'),fn:'komparasi.csv'},
+    timeline:{check:()=>lastTimeline.length,data:()=>'Tanggal,Teks,Sentimen\n'+lastTimeline.map(({date,text,label})=>`"${date}","${text.replace(/"/g,"'")}","${label}"`).join('\n'),fn:'timeline.csv'},
+    geo:{check:()=>lastGeo.length,data:()=>'Wilayah,Frekuensi\n'+lastGeo.map(([p,c])=>`"${p}",${c}`).join('\n'),fn:'geo.csv'},
+    keyness:{check:()=>lastKeyness.length,data:()=>'Kata,Frek Target,Frek Ref,G2,Kelas\n'+lastKeyness.map(({w,O1,O2,ll})=>`"${w}",${O1},${O2},${ll.toFixed(2)},"${ll>0?'Khas Target':'Khas Referensi'}"`).join('\n'),fn:'keyness.csv'},
+    ner:{check:()=>lastNER.length,data:()=>'Entitas,Frekuensi,Tipe\n'+lastNER.map(({w,c,type})=>`"${w}",${c},"${type}"`).join('\n'),fn:'ner.csv'},
+    pos:{check:()=>lastPOS.length,data:()=>'Kata,Tag POS,Kelas Kata\n'+lastPOS.map(({word,tag})=>`"${word}","${tag}","${(POS_RULES[tag]||{name:tag}).name}"`).join('\n'),fn:'pos-tagging.csv'},
+    dispersion:{check:()=>lastDisp.length,data:()=>'Kata,Frekuensi,Posisi\n'+lastDisp.map(({word,count,positions})=>`"${word}",${count},"${positions.join(';')}"`).join('\n'),fn:'dispersi.csv'}
+  };
+  const m=map[type];if(!m||!m.check()){alert(`Jalankan analisis ${type} dulu.`);return;}
+  const blob=new Blob(['\uFEFF'+m.data()],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=m.fn;a.click();URL.revokeObjectURL(url);
+}
+// ══════════════════════════════════════════════════════════════
+// ★ SISTEM BILINGUAL — Indonesia / English
+// ══════════════════════════════════════════════════════════════
+const I18N = {
+  id: {
+    // ── Auth overlay ──
+    auth_tab_login:'Masuk', auth_tab_register:'Daftar',
+    auth_title_login:'Selamat datang', auth_sub_login:'Masuk ke akun DiscourseLens kamu',
+    auth_title_register:'Buat akun baru', auth_sub_register:'Daftar gratis, gunakan semua fitur',
+    auth_label_name:'Nama Lengkap', auth_label_email:'Email', auth_label_pass:'Password',
+    auth_label_confirm:'Konfirmasi Password',
+    auth_ph_name:'Nama kamu', auth_ph_email:'email@kamu.com',
+    auth_ph_pass:'Min. 8 karakter', auth_ph_confirm:'Ulangi password',
+    auth_ph_fo_email:'email@kamu.com',
+    auth_btn_login:'Masuk ke DiscourseLens', auth_btn_register:'Daftar Sekarang',
+    auth_btn_forgot:'Cek Akun', auth_forgot_link:'Lupa password?',
+    auth_back_login:'← Kembali ke login', auth_register_link:'Daftar di sini',
+    auth_have_account:'Sudah punya akun?', auth_no_account:'Belum punya akun?',
+    auth_forgot_sub:'Masukkan email terdaftar kamu. Kami akan tampilkan panduan reset.',
+    auth_terms:'Dengan mendaftar, kamu menyetujui penggunaan platform ini untuk keperluan penelitian.',
+    auth_footer:'Data tersimpan aman di Google Sheets · Tidak ada tracking',
+    auth_pw_hint:'Minimal 8 karakter, ada huruf kapital & angka',
+    // ── Header ──
+    tagline:'SEE WHAT TEXT REALLY MEANS · v4.2',
+    btn_save_session:'💾 Simpan Sesi', btn_load_session:'📂 Muat Sesi',
+    btn_report:'📄 Ekspor Laporan', btn_logout:'Keluar',
+    // ── Hero ──
+    hero_title:'Analisis korpus digital<br>untuk <em>penelitian AWK</em>',
+    hero_sub:'Platform analisis wacana kritis terlengkap — KWIC, kolokasi, keyness, anotasi, NER, topik, sentimen, narasi, spasial, dan ekspor laporan otomatis.',
+    // ── Sidebar ──
+    label_input:'Input Korpus', label_stats:'Statistik',
+    label_features:'Fitur analisis', label_stopwords:'Stopwords',
+    label_session:'Sesi', label_embed:'Embed ke website',
+    tab_text:'Teks', tab_file:'File', tab_image:'Gambar', tab_compare:'Bandingkan',
+    placeholder_corpus:'Tempel teks korpus di sini...',
+    placeholder_corpus_a:'Tempel Korpus A...', placeholder_corpus_b:'Tempel Korpus B...',
+    sw_label:'⚙ Stopwords kustom', sw_placeholder:'Tambah kata...',
+    sw_reset:'Reset default',
+    btn_analyze:'Mulai Analisis',
+    btn_save_session_short:'💾 Simpan sesi', btn_load_session_short:'📂 Muat sesi',
+    // ── Feature buttons ──
+    feat_kwic:'Konkordansi', feat_freq:'Frekuensi', feat_cloud:'Word Cloud',
+    feat_colloc:'Kolokasi', feat_topic:'Topik', feat_sentiment:'Sentimen',
+    feat_narasi:'Narasi', feat_annot:'Anotasi', feat_keyness:'Keyness',
+    feat_ner:'NER / Entitas', feat_pos:'POS Tagging', feat_readability:'Keterbacaan',
+    feat_dispersion:'Dispersi', feat_compare:'Komparasi', feat_network:'Network',
+    feat_heatmap:'Heatmap', feat_timeline:'Timeline', feat_geo:'Peta Geo',
+    // ── Panel titles ──
+    pt_kwic:'Konkordansi (KWIC)', pt_freq:'Frekuensi & N-gram', pt_cloud:'Word Cloud',
+    pt_colloc:'Kolokasi & Asosiasi', pt_topic:'Analisis Topik',
+    pt_sentiment:'Analisis Sentimen', pt_narasi:'Analisis Narasi',
+    pt_annot:'Anotasi & Labeling Manual', pt_keyness:'Keyness Analysis',
+    pt_ner:'Deteksi Entitas (NER)', pt_pos:'POS Tagging',
+    pt_readability:'Analisis Keterbacaan', pt_dispersion:'Plot Dispersi Kata',
+    pt_compare:'Komparasi Korpus', pt_network:'Jaringan Kata',
+    pt_heatmap:'Heatmap Frekuensi', pt_timeline:'Timeline Kronologis',
+    pt_geo:'Peta Geografis',
+    // ── Action buttons ──
+    btn_search:'Cari', btn_show:'Tampilkan', btn_generate:'Generate',
+    btn_calc:'Hitung', btn_extract:'Ekstrak', btn_analyze_v:'Analisis',
+    btn_analyze_narasi:'Analisis Narasi', btn_detect:'Deteksi Entitas',
+    btn_analyze_pos:'Analisis POS', btn_calc_read:'Hitung Keterbacaan',
+    btn_plot:'Plot', btn_compare_v:'Bandingkan', btn_build_graph:'Bangun Graf',
+    btn_build_heatmap:'Buat Heatmap', btn_extract_tl:'Ekstrak Timeline',
+    btn_detect_geo:'Deteksi Wilayah', btn_add_label:'+ Label',
+    btn_calc_keyness:'Hitung Keyness',
+    // ── Placeholders ──
+    ph_kwic:'Kata kunci...', ph_colloc:'Kata target...',
+    ph_disp:'Kata (pisah koma): media, wacana...',
+    ph_hm:'Kata (pisah koma)...', ph_annot_label:'Nama label baru...',
+    ph_stopword:'Tambah kata...',
+    // ── Misc UI ──
+    welcome_msg:'Masukkan teks atau upload file, lalu tekan',
+    welcome_btn:'Mulai analisis',
+    ocr_hint:'OCR via Tesseract.js. Terbaik untuk teks cetak jelas.',
+    compare_hint:'Gunakan tab <strong>Bandingkan</strong> di sidebar untuk input dua korpus.',
+    stat_tokens:'Token', stat_types:'Tipe', stat_sents:'Kalimat', stat_ttr:'TTR',
+  },
+
+  en: {
+    // ── Auth overlay ──
+    auth_tab_login:'Sign In', auth_tab_register:'Register',
+    auth_title_login:'Welcome back', auth_sub_login:'Sign in to your DiscourseLens account',
+    auth_title_register:'Create an account', auth_sub_register:'Register free, use all features',
+    auth_label_name:'Full Name', auth_label_email:'Email', auth_label_pass:'Password',
+    auth_label_confirm:'Confirm Password',
+    auth_ph_name:'Your name', auth_ph_email:'email@example.com',
+    auth_ph_pass:'Min. 8 characters', auth_ph_confirm:'Repeat password',
+    auth_ph_fo_email:'email@example.com',
+    auth_btn_login:'Sign in to DiscourseLens', auth_btn_register:'Create Account',
+    auth_btn_forgot:'Check Account', auth_forgot_link:'Forgot password?',
+    auth_back_login:'← Back to sign in', auth_register_link:'Register here',
+    auth_have_account:"Already have an account?", auth_no_account:"Don't have an account?",
+    auth_forgot_sub:'Enter your registered email. We will show you the reset guide.',
+    auth_terms:'By registering, you agree to use this platform for research purposes.',
+    auth_footer:'Data securely stored in Google Sheets · No tracking',
+    auth_pw_hint:'Min. 8 characters, uppercase letter & number required',
+    // ── Header ──
+    tagline:'SEE WHAT TEXT REALLY MEANS · v4.2',
+    btn_save_session:'💾 Save Session', btn_load_session:'📂 Load Session',
+    btn_report:'📄 Export Report', btn_logout:'Sign Out',
+    // ── Hero ──
+    hero_title:'Digital corpus analysis<br>for <em>critical discourse research</em>',
+    hero_sub:'The most complete critical discourse analysis platform — KWIC, collocation, keyness, annotation, NER, topics, sentiment, narrative, spatial, and automatic report export.',
+    // ── Sidebar ──
+    label_input:'Corpus Input', label_stats:'Statistics',
+    label_features:'Analysis features', label_stopwords:'Stopwords',
+    label_session:'Session', label_embed:'Embed to website',
+    tab_text:'Text', tab_file:'File', tab_image:'Image', tab_compare:'Compare',
+    placeholder_corpus:'Paste corpus text here...',
+    placeholder_corpus_a:'Paste Corpus A...', placeholder_corpus_b:'Paste Corpus B...',
+    sw_label:'⚙ Custom stopwords', sw_placeholder:'Add word...',
+    sw_reset:'Reset default',
+    btn_analyze:'Start Analysis',
+    btn_save_session_short:'💾 Save session', btn_load_session_short:'📂 Load session',
+    // ── Feature buttons ──
+    feat_kwic:'Concordance', feat_freq:'Frequency', feat_cloud:'Word Cloud',
+    feat_colloc:'Collocation', feat_topic:'Topics', feat_sentiment:'Sentiment',
+    feat_narasi:'Narrative', feat_annot:'Annotation', feat_keyness:'Keyness',
+    feat_ner:'NER / Entities', feat_pos:'POS Tagging', feat_readability:'Readability',
+    feat_dispersion:'Dispersion', feat_compare:'Comparison', feat_network:'Network',
+    feat_heatmap:'Heatmap', feat_timeline:'Timeline', feat_geo:'Geo Map',
+    // ── Panel titles ──
+    pt_kwic:'Concordance (KWIC)', pt_freq:'Frequency & N-gram', pt_cloud:'Word Cloud',
+    pt_colloc:'Collocation & Association', pt_topic:'Topic Analysis',
+    pt_sentiment:'Sentiment Analysis', pt_narasi:'Narrative Analysis',
+    pt_annot:'Manual Annotation & Labeling', pt_keyness:'Keyness Analysis',
+    pt_ner:'Entity Detection (NER)', pt_pos:'POS Tagging',
+    pt_readability:'Readability Analysis', pt_dispersion:'Word Dispersion Plot',
+    pt_compare:'Corpus Comparison', pt_network:'Word Network',
+    pt_heatmap:'Frequency Heatmap', pt_timeline:'Chronological Timeline',
+    pt_geo:'Geographic Map',
+    // ── Action buttons ──
+    btn_search:'Search', btn_show:'Show', btn_generate:'Generate',
+    btn_calc:'Calculate', btn_extract:'Extract', btn_analyze_v:'Analyze',
+    btn_analyze_narasi:'Analyze Narrative', btn_detect:'Detect Entities',
+    btn_analyze_pos:'Analyze POS', btn_calc_read:'Calculate Readability',
+    btn_plot:'Plot', btn_compare_v:'Compare', btn_build_graph:'Build Graph',
+    btn_build_heatmap:'Build Heatmap', btn_extract_tl:'Extract Timeline',
+    btn_detect_geo:'Detect Regions', btn_add_label:'+ Label',
+    btn_calc_keyness:'Calculate Keyness',
+    // ── Placeholders ──
+    ph_kwic:'Keyword...', ph_colloc:'Target word...',
+    ph_disp:'Words (comma-separated): media, power...',
+    ph_hm:'Words (comma-separated)...', ph_annot_label:'New label name...',
+    ph_stopword:'Add word...',
+    // ── Misc UI ──
+    welcome_msg:'Enter text or upload a file, then press',
+    welcome_btn:'Start analysis',
+    ocr_hint:'OCR via Tesseract.js. Best results with clear printed text.',
+    compare_hint:'Use the <strong>Compare</strong> tab in the sidebar to input two corpora.',
+    stat_tokens:'Tokens', stat_types:'Types', stat_sents:'Sentences', stat_ttr:'TTR',
+  }
+};
+
+// ── Bahasa aktif ─────────────────────────────────────────────
+let currentLang = localStorage.getItem('dl_lang') || 'id';
+
+function t(key){ return I18N[currentLang][key] || I18N['id'][key] || key; }
+
+function setLang(lang){
+  currentLang = lang;
+  try{ localStorage.setItem('dl_lang', lang); }catch(e){}
+  // Update tombol aktif
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lang-' + lang);
+  if(btn) btn.classList.add('active');
+  // Terapkan terjemahan
+  applyI18N();
+  // Update auth overlay bahasa juga
+  applyAuthI18N();
+}
+
+function applyI18N(){
+  // Semua elemen dengan data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = t(key);
+    if(val) el.innerHTML = val;
+  });
+  // Semua elemen dengan data-i18n-placeholder
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const val = t(key);
+    if(val) el.placeholder = val;
+  });
+  // Update stat labels di sidebar
+  const statLabels = document.querySelectorAll('.live-stat');
+  if(statLabels.length >= 4){
+    const keys = ['stat_tokens','stat_types','stat_sents','stat_ttr'];
+    statLabels.forEach((el,i) => {
+      const txt = el.querySelector('strong');
+      const num = txt ? txt.outerHTML : '';
+      el.innerHTML = num + ' ' + t(keys[i] || '');
+    });
+  }
+  // Update html lang attribute
+  document.documentElement.lang = currentLang;
+  // Update tagline di auth brand
+  const brandTag = document.querySelector('.auth-brand-tag');
+  if(brandTag) brandTag.textContent = currentLang === 'en'
+    ? 'SEE WHAT TEXT REALLY MEANS · v4.2'
+    : 'SEE WHAT TEXT REALLY MEANS · v4.2';
+}
+
+function applyAuthI18N(){
+  // Tab login/register
+  const tabLogin = document.getElementById('tab-login');
+  const tabReg   = document.getElementById('tab-register');
+  if(tabLogin) tabLogin.textContent = t('auth_tab_login');
+  if(tabReg)   tabReg.textContent   = t('auth_tab_register');
+  // Tombol & placeholder form login
+  const btnLi = document.getElementById('btn-li');
+  if(btnLi) btnLi.textContent = t('auth_btn_login');
+  const liEmail = document.getElementById('li-email');
+  if(liEmail){ liEmail.placeholder = t('auth_ph_email'); }
+  const liPass = document.getElementById('li-pass');
+  if(liPass){ liPass.placeholder = '••••••••'; }
+  // Form register
+  const btnRe = document.getElementById('btn-re');
+  if(btnRe) btnRe.textContent = t('auth_btn_register');
+  const reName = document.getElementById('re-name');
+  if(reName) reName.placeholder = t('auth_ph_name');
+  const reEmail = document.getElementById('re-email');
+  if(reEmail) reEmail.placeholder = t('auth_ph_email');
+  const rePass = document.getElementById('re-pass');
+  if(rePass) rePass.placeholder = t('auth_ph_pass');
+  const reConfirm = document.getElementById('re-confirm');
+  if(reConfirm) reConfirm.placeholder = t('auth_ph_confirm');
+  // Form forgot
+  const foEmail = document.getElementById('fo-email');
+  if(foEmail) foEmail.placeholder = t('auth_ph_fo_email');
+  // Label-label form auth
+  document.querySelectorAll('.auth-label').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if(key) el.textContent = t(key);
+  });
+  // Teks lainnya di auth overlay
+  const forgotBtn = document.querySelector('#form-forgot button[type=submit]');
+  if(forgotBtn) forgotBtn.textContent = t('auth_btn_forgot');
+  const pwHint = document.getElementById('pw-hint');
+  if(pwHint) pwHint.textContent = t('auth_pw_hint');
+  // Forgot link
+  const forgotLink = document.querySelector('[onclick="authSwitchTab(\'forgot\')"]');
+  if(forgotLink && forgotLink.classList.contains('auth-link')) forgotLink.textContent = t('auth_forgot_link');
+  // Back to login link
+  const backLinks = document.querySelectorAll('[onclick="authSwitchTab(\'login\')"]');
+  backLinks.forEach(el => { if(el.classList.contains('auth-link')) el.textContent = t('auth_back_login'); });
+  // Auth footer
+  const authFooter = document.querySelector('#auth-overlay > div > p');
+  if(authFooter) authFooter.textContent = t('auth_footer');
+}
+
+// Inisiasi bahasa saat halaman load
+document.addEventListener('DOMContentLoaded', () => {
+  // Deteksi bahasa browser secara otomatis
+  if(!localStorage.getItem('dl_lang')){
+    const browserLang = navigator.language || navigator.userLanguage || 'id';
+    currentLang = browserLang.startsWith('id') ? 'id' : 'en';
+  }
+  setLang(currentLang);
+});
+
+
+// ══════════════════════════════════════════════════════════════
+//
+// CARA SETUP (lakukan sekali):
+// 1. Buka Google Sheets → buat spreadsheet baru
+// 2. Beri nama sheet pertama: "users"
+// 3. Baris pertama (header): Name | Email | Password | Plan | RegisterDate | LastLogin
+// 4. Klik Extensions → Apps Script → paste kode APPS_SCRIPT di bawah → Save → Deploy
+// 5. Copy Web App URL → tempel ke SHEETS_URL di bawah ini
+// 6. Ganti APP_SECRET dengan string acak bebas (minimal 20 karakter)
+//
+// ── KONFIGURASI — GANTI DUA NILAI INI ──────────────────────────
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzKgerFN5F3FzQoMbMdlHa-OSFl6Z9nfq5dSM7LyHp6GJLYtW9ShEo5G5fJ-AlTDUKbhA/exec';
+const APP_SECRET = '4bibHabib!4bibHabib!';
+// ───────────────────────────────────────────────────────────────
+
+// State login — disimpan di memori, bukan localStorage
+const AuthState = {
+  _user: null,
+  set(user){ this._user = user; },
+  get(){ return this._user; },
+  clear(){ this._user = null; },
+  isLoggedIn(){ return !!this._user; }
+};
+
+// ── Hash password sederhana (SHA-256 via SubtleCrypto) ──────────
+async function hashPassword(password) {
+  const msgBuffer = new TextEncoder().encode(password + APP_SECRET);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Panggil Google Apps Script ──────────────────────────────────
+async function sheetsAPI(action, payload = {}) {
+  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+    throw new Error('SETUP_REQUIRED');
+  }
+  const params = new URLSearchParams({ action, ...payload });
+  const res = await fetch(`${SHEETS_URL}?${params}`, { method: 'GET', mode: 'cors' });
+  if (!res.ok) throw new Error('Network error: ' + res.status);
+  return await res.json();
+}
+
+// ── UI Helpers ──────────────────────────────────────────────────
+function authShowMsg(text, type = 'error') {
+  const el = document.getElementById('auth-msg');
+  el.textContent = text;
+  el.className = `auth-msg ${type} show`;
+}
+function authClearMsg() {
+  document.getElementById('auth-msg').className = 'auth-msg';
+}
+function authSetLoading(btnId, loading, originalText) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = loading;
+  btn.textContent = loading ? 'Memproses...' : originalText;
+}
+function authTogglePw(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.textContent = el.type === 'password' ? '👁' : '🙈';
+}
+function authCheckPw(pw) {
+  const len   = pw.length >= 8;
+  const upper = /[A-Z]/.test(pw);
+  const num   = /[0-9]/.test(pw);
+  const score = [len, upper, num].filter(Boolean).length;
+  const colors = ['', '#b5334a', '#c9820a', '#0b7a75'];
+  const widths  = ['0%', '33%', '67%', '100%'];
+  const hints   = ['', 'Tambahkan huruf kapital & angka', 'Tambahkan angka', '✓ Password kuat'];
+  const bar = document.getElementById('pw-bar');
+  bar.style.width = widths[score];
+  bar.style.background = colors[score];
+  document.getElementById('pw-hint').textContent = score > 0 ? hints[score] : 'Minimal 8 karakter, ada huruf kapital & angka';
+}
+function authShowToast(text, duration = 3000) {
+  const t = document.getElementById('auth-toast');
+  t.textContent = text;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+function authSwitchTab(tab) {
+  ['login','register','forgot','reset'].forEach(t => {
+    const el = document.getElementById('form-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+    const tabEl = document.getElementById('tab-' + t);
+    if (tabEl) tabEl.classList.toggle('active', t === tab);
+  });
+  // Pastikan tab header muncul kembali jika kembali ke login/register
+  if (tab === 'login' || tab === 'register') {
+    const tl = document.getElementById('tab-login');
+    const tr = document.getElementById('tab-register');
+    if (tl) tl.style.display = '';
+    if (tr) tr.style.display = '';
+  }
+  authClearMsg();
+}
+
+// ── Masuk ke Aplikasi setelah login sukses ──────────────────────
+function authEnterApp(user) {
+  AuthState.set(user);
+  // Sembunyikan overlay
+  const overlay = document.getElementById('auth-overlay');
+  overlay.style.opacity = '0';
+  overlay.style.transition = 'opacity .4s';
+  setTimeout(() => overlay.style.display = 'none', 400);
+  // Tampilkan user badge di header
+  const initials = (user.name || 'U').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('user-name-lbl').textContent = user.name || user.email;
+  const planEl = document.getElementById('user-plan-lbl');
+  planEl.textContent = (user.plan || 'FREE').toUpperCase();
+  planEl.className = 'user-plan plan-' + (user.plan || 'free').toLowerCase();
+  document.getElementById('user-badge-wrap').style.display = 'flex';
+  document.getElementById('btn-logout').style.display = 'block';
+  authShowToast(`Selamat datang, ${user.name || user.email}! 👋`);
+}
+
+// ── LOGIN ────────────────────────────────────────────────────────
+async function authLogin(e) {
+  e.preventDefault();
+  authClearMsg();
+  authSetLoading('btn-li', true, 'Masuk ke DiscourseLens');
+  const email    = document.getElementById('li-email').value.trim().toLowerCase();
+  const password = document.getElementById('li-pass').value;
+  try {
+    // Mode demo: jika SHEETS_URL belum diisi, tampilkan panduan
+    if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+      authShowMsg('⚙️ Google Sheets belum dikonfigurasi. Ikuti panduan setup di bawah form ini.', 'info');
+      authSetLoading('btn-li', false, 'Masuk ke DiscourseLens');
+      return;
+    }
+    const pwHash = await hashPassword(password);
+    const result = await sheetsAPI('login', { email, passwordHash: pwHash });
+    if (result.success) {
+      authEnterApp(result.user);
+    } else {
+      authShowMsg(result.message || 'Email atau password tidak valid.');
+    }
+  } catch (err) {
+    if (err.message === 'SETUP_REQUIRED') {
+      authShowMsg('⚙️ Google Sheets belum dikonfigurasi. Lihat panduan setup.', 'info');
+    } else {
+      authShowMsg('Terjadi kesalahan koneksi. Coba lagi.');
+      console.error('Login error:', err);
+    }
+  } finally {
+    authSetLoading('btn-li', false, 'Masuk ke DiscourseLens');
+  }
+}
+
+// ── REGISTER ─────────────────────────────────────────────────────
+async function authRegister(e) {
+  e.preventDefault();
+  authClearMsg();
+  const name    = document.getElementById('re-name').value.trim();
+  const email   = document.getElementById('re-email').value.trim().toLowerCase();
+  const pw      = document.getElementById('re-pass').value;
+  const confirm = document.getElementById('re-confirm').value;
+  // Validasi client-side
+  if (name.length < 2)         { authShowMsg('Nama minimal 2 karakter.'); return; }
+  if (pw.length < 8)            { authShowMsg('Password minimal 8 karakter.'); return; }
+  if (!/[A-Z]/.test(pw))       { authShowMsg('Password harus mengandung huruf kapital.'); return; }
+  if (!/[0-9]/.test(pw))       { authShowMsg('Password harus mengandung angka.'); return; }
+  if (pw !== confirm)           { authShowMsg('Konfirmasi password tidak cocok.'); return; }
+  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+    authShowMsg('⚙️ Google Sheets belum dikonfigurasi. Ikuti panduan setup.', 'info');
+    return;
+  }
+  authSetLoading('btn-re', true, 'Daftar Sekarang');
+  try {
+    const pwHash = await hashPassword(pw);
+    const result = await sheetsAPI('register', {
+      name, email, passwordHash: pwHash,
+      plan: 'free',
+      registerDate: new Date().toLocaleDateString('id-ID')
+    });
+    if (result.success) {
+      authShowMsg('✓ Akun berhasil dibuat! Silakan login dengan email dan password kamu.', 'success');
+      setTimeout(() => {
+        authSwitchTab('login');
+        document.getElementById('li-email').value = email;
+      }, 1800);
+    } else {
+      authShowMsg(result.message || 'Gagal mendaftar. Coba lagi.');
+    }
+  } catch(err) {
+    authShowMsg('Terjadi kesalahan. Periksa koneksi internet.');
+    console.error('Register error:', err);
+  } finally {
+    authSetLoading('btn-re', false, 'Daftar Sekarang');
+  }
+}
+
+// ── LUPA PASSWORD — Kirim link reset ke email ────────────────────
+async function authForgot(e) {
+  e.preventDefault();
+  authClearMsg();
+  const email = document.getElementById('fo-email').value.trim().toLowerCase();
+  if (!email) { authShowMsg('Masukkan email kamu.'); return; }
+  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+    authShowMsg('⚙️ Google Sheets belum dikonfigurasi.', 'info'); return;
+  }
+  const btn = document.getElementById('btn-forgot');
+  btn.disabled = true; btn.textContent = 'Mengirim...';
+  try {
+    await sheetsAPI('requestReset', { email });
+    // Selalu tampilkan pesan sukses (tidak bocorkan info)
+    authShowMsg('✓ Jika email terdaftar, link reset telah dikirim. Periksa inbox (dan folder spam).', 'success');
+    document.getElementById('fo-email').value = '';
+  } catch(err) {
+    authShowMsg('Terjadi kesalahan. Coba lagi.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = currentLang === 'en' ? 'Send Reset Link' : 'Kirim Link Reset';
+  }
+}
+
+// ── VERIFY TOKEN — Cek token dari URL, tampilkan form reset ──────
+async function authCheckResetToken() {
+  const params = new URLSearchParams(window.location.search);
+  const token  = params.get('reset');
+  const email  = params.get('email');
+  if (!token || !email) return; // Tidak ada token di URL — tampilan normal
+
+  // Sembunyikan tab login/register, tampilkan form reset
+  document.getElementById('tab-login').style.display    = 'none';
+  document.getElementById('tab-register').style.display = 'none';
+  authShowMsg('🔄 Memverifikasi link reset...', 'info');
+
+  // Simpan token & email untuk digunakan saat submit
+  window._resetToken = token;
+  window._resetEmail = decodeURIComponent(email);
+
+  try {
+    if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+      // Mode demo — langsung tampilkan form
+      showResetForm('Pengguna');
+      return;
+    }
+    const result = await sheetsAPI('verifyResetToken', {
+      token, email: decodeURIComponent(email)
+    });
+    if (result.valid) {
+      showResetForm(result.name || '');
+    } else {
+      authClearMsg();
+      authShowMsg('❌ ' + (result.message || 'Link tidak valid atau sudah kadaluarsa.'), 'error');
+      // Kembalikan tab
+      document.getElementById('tab-login').style.display    = '';
+      document.getElementById('tab-register').style.display = '';
+    }
+  } catch(err) {
+    authShowMsg('Terjadi kesalahan saat memverifikasi link.', 'error');
+    document.getElementById('tab-login').style.display    = '';
+    document.getElementById('tab-register').style.display = '';
+  }
+}
+
+function showResetForm(userName) {
+  authClearMsg();
+  // Sembunyikan semua form, tampilkan form reset
+  ['login','register','forgot','reset'].forEach(f => {
+    const el = document.getElementById('form-' + f);
+    if (el) el.style.display = 'none';
+  });
+  document.getElementById('form-reset').style.display = 'block';
+  // Update salam
+  const greeting = document.getElementById('reset-greeting');
+  const sub      = document.getElementById('reset-sub');
+  if (greeting) greeting.textContent = userName
+    ? 'Halo, ' + userName + '! Buat password baru'
+    : 'Buat Password Baru';
+  if (sub) sub.textContent = 'Masukkan password baru untuk akun kamu.';
+  // Hapus query params dari URL tanpa reload (bersih di address bar)
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
+
+// ── CONFIRM RESET — Simpan password baru ─────────────────────────
+async function authConfirmReset(e) {
+  e.preventDefault();
+  authClearMsg();
+  const pw      = document.getElementById('rs-pass').value;
+  const confirm = document.getElementById('rs-confirm').value;
+
+  if (pw.length < 8)          { authShowMsg('Password minimal 8 karakter.'); return; }
+  if (!/[A-Z]/.test(pw))      { authShowMsg('Password harus mengandung huruf kapital.'); return; }
+  if (!/[0-9]/.test(pw))      { authShowMsg('Password harus mengandung angka.'); return; }
+  if (pw !== confirm)          { authShowMsg('Konfirmasi password tidak cocok.'); return; }
+
+  const btn = document.getElementById('btn-reset');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+
+  try {
+    const newPwHash = await hashPassword(pw);
+
+    if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+      // Mode demo
+      authShowMsg('✓ (Demo) Password berhasil diubah! Silakan login.', 'success');
+      setTimeout(() => {
+        document.getElementById('form-reset').style.display = 'none';
+        document.getElementById('tab-login').style.display  = '';
+        document.getElementById('tab-register').style.display = '';
+        authSwitchTab('login');
+      }, 2000);
+      return;
+    }
+
+    const result = await sheetsAPI('confirmReset', {
+      token:           window._resetToken || '',
+      email:           window._resetEmail || '',
+      newPasswordHash: newPwHash
+    });
+
+    if (result.success) {
+      authShowMsg('✓ ' + result.message, 'success');
+      authShowToast('Password berhasil diubah! 🎉');
+      // Kembali ke halaman login setelah 2 detik
+      setTimeout(() => {
+        document.getElementById('form-reset').style.display  = 'none';
+        document.getElementById('tab-login').style.display   = '';
+        document.getElementById('tab-register').style.display = '';
+        authSwitchTab('login');
+        window._resetToken = null;
+        window._resetEmail = null;
+      }, 2200);
+    } else {
+      authShowMsg('❌ ' + (result.message || 'Gagal mengubah password.'));
+    }
+  } catch(err) {
+    authShowMsg('Terjadi kesalahan. Coba lagi.');
+    console.error('Confirm reset error:', err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = currentLang === 'en' ? 'Save New Password' : 'Simpan Password Baru';
+  }
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────────
+function authLogout() {
+  if (!confirm('Yakin ingin keluar dari DiscourseLens?')) return;
+  AuthState.clear();
+  document.getElementById('user-badge-wrap').style.display = 'none';
+  document.getElementById('btn-logout').style.display = 'none';
+  document.getElementById('auth-overlay').style.display = 'flex';
+  document.getElementById('auth-overlay').style.opacity = '1';
+  authSwitchTab('login');
+  authShowToast('Berhasil keluar. Sampai jumpa! 👋');
+}
+
+// ── INISIASI AWAL ─────────────────────────────────────────────────
+// Cek apakah ada session tersimpan (dari sessionStorage — hilang saat tab ditutup)
+(function initAuth(){
+  try {
+    const saved = sessionStorage.getItem('_dl_user');
+    if (saved) {
+      const user = JSON.parse(saved);
+      if (user && user.email) { authEnterApp(user); return; }
+    }
+  } catch(e) {}
+
+  // Cek apakah URL mengandung ?reset=TOKEN (dari email reset password)
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('reset') && params.get('email')) {
+    // Jalankan setelah DOM siap
+    setTimeout(authCheckResetToken, 400);
+    return;
+  }
+
+  // Jika SHEETS_URL belum dikonfigurasi, tampilkan panduan
+  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+    setTimeout(() => {
+      authShowMsg('⚙️ Sistem login belum dikonfigurasi. Ikuti panduan setup Google Sheets.', 'info');
+    }, 300);
+  }
+})();
+
+// Simpan user ke sessionStorage setelah login (agar tidak perlu login ulang saat refresh)
+const _origEnterApp = authEnterApp;
+// Override untuk tambahkan sessionStorage save
+window.authEnterApp = function(user) {
+  try { sessionStorage.setItem('_dl_user', JSON.stringify(user)); } catch(e){}
+  _origEnterApp(user);
+};
+
+</script>
+</body>
+</html>
