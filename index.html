@@ -604,7 +604,7 @@ footer strong{color:var(--teal);}
         <p data-i18n="home_about_body1"><strong>DiscourseLens</strong> adalah platform analisis wacana kritis berbasis web yang dirancang untuk mendukung penelitian linguistik, pendidikan bahasa, dan studi media di era digital.</p>
         <p data-i18n="home_about_body2">Platform ini mengintegrasikan pendekatan <strong>korpus kuantitatif</strong> dengan interpretasi <strong>kualitatif AWK</strong>, memungkinkan peneliti menganalisis teks dari berbagai dimensi: leksikal, gramatikal, semantik, pragmatik, dan sosial-kritis.</p>
         <p data-i18n="home_about_body3">Seluruh proses analisis berjalan di browser pengguna — <strong>tidak ada data yang dikirim ke server eksternal</strong>. Data korpus penelitian kamu tetap privat dan aman.</p>
-        <p style="color:rgba(255,255,255,.22);font-size:12px;" data-i18n="home_about_license">DiscourseLens v4.2 · MIT License · Dibuat dengan ❤ untuk komunitas peneliti Global</p>
+        <p style="color:rgba(255,255,255,.22);font-size:12px;" data-i18n="home_about_license">DiscourseLens v4.2 · MIT License · Dibuat dengan ❤ untuk komunitas peneliti Indonesia</p>
       </div>
     </div>
   </section>
@@ -2480,7 +2480,6 @@ const I18N = {
 // ── Bahasa aktif ─────────────────────────────────────────────
 let currentLang = localStorage.getItem('dl_lang') || 'id';
 
-function t(key){ return I18N[currentLang][key] || I18N['id'][key] || key; }
 
 function setLang(lang){
   currentLang = lang;
@@ -2494,30 +2493,23 @@ function setLang(lang){
 }
 
 function applyHomeI18N(){
-  // Semua elemen home dengan data-i18n sudah ditangani oleh applyI18N() yang umum
-  // Fungsi ini untuk update elemen spesifik yang butuh innerHTML (ada tag <strong> dll)
-  const htmlKeys = [
-    'home_feat_title','home_howto_title','home_about_title',
-    'home_cta_bottom_title','home_about_body1','home_about_body2',
-    'home_about_body3','home_hero_title'
-  ];
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    const val = I18N[currentLang][key] || I18N['id'][key];
-    if (!val) return;
-    // Gunakan innerHTML untuk teks yang mengandung tag HTML
-    if (htmlKeys.includes(key) || val.includes('<')) {
-      el.innerHTML = val;
-    } else {
-      el.textContent = val;
-    }
-  });
-  // Update lang switcher di home nav juga (clone dari header app)
-  const homeLangBtns = document.querySelectorAll('.home-lang-id, .home-lang-en');
-  homeLangBtns.forEach(b => {
+  // applyI18N() sudah menangani semua [data-i18n] termasuk di home page
+  // Fungsi ini hanya sync status tombol bahasa di home nav
+  document.querySelectorAll('.home-lang-id, .home-lang-en').forEach(b => {
     const l = b.classList.contains('home-lang-en') ? 'en' : 'id';
     b.classList.toggle('active', l === currentLang);
   });
+  // Sync tombol lang di header app juga
+  document.querySelectorAll('#lang-id, #lang-en').forEach(b => {
+    const l = b.id === 'lang-en' ? 'en' : 'id';
+    b.classList.toggle('active', l === currentLang);
+  });
+}
+
+function t(key){
+  const val = I18N[currentLang]?.[key] ?? I18N['id']?.[key];
+  // Kembalikan nilai hanya jika benar-benar ada — jangan kembalikan nama key
+  return (val !== undefined && val !== null) ? val : '';
 }
 
 function applyI18N(){
@@ -2525,13 +2517,14 @@ function applyI18N(){
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     const val = t(key);
-    if(val) el.innerHTML = val;
+    // Hanya update jika ada terjemahan — jangan tampilkan nama key sebagai teks
+    if(val && val !== key) el.innerHTML = val;
   });
   // Semua elemen dengan data-i18n-placeholder
   document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
     const key = el.getAttribute('data-i18n-placeholder');
     const val = t(key);
-    if(val) el.placeholder = val;
+    if(val && val !== key) el.placeholder = val;
   });
   // Update stat labels di sidebar
   const statLabels = document.querySelectorAll('.live-stat');
@@ -2540,24 +2533,19 @@ function applyI18N(){
     statLabels.forEach((el,i) => {
       const txt = el.querySelector('strong');
       const num = txt ? txt.outerHTML : '';
-      el.innerHTML = num + ' ' + t(keys[i] || '');
+      const label = t(keys[i] || '');
+      if(label) el.innerHTML = num + ' ' + label;
     });
   }
-  // Update html lang attribute
   document.documentElement.lang = currentLang;
-  // Update tagline di auth brand
-  const brandTag = document.querySelector('.auth-brand-tag');
-  if(brandTag) brandTag.textContent = currentLang === 'en'
-    ? 'SEE WHAT TEXT REALLY MEANS · v4.2'
-    : 'SEE WHAT TEXT REALLY MEANS · v4.2';
 }
 
 function applyAuthI18N(){
   // Tab login/register
   const tabLogin = document.getElementById('tab-login');
   const tabReg   = document.getElementById('tab-register');
-  if(tabLogin) tabLogin.textContent = t('auth_tab_login');
-  if(tabReg)   tabReg.textContent   = t('auth_tab_register');
+  if(tabLogin) tabLogin.textContent = currentLang === 'en' ? 'Sign In' : 'Masuk';
+  if(tabReg)   tabReg.textContent   = currentLang === 'en' ? 'Register' : 'Daftar';
   // Tombol & placeholder form login
   const btnLi = document.getElementById('btn-li');
   if(btnLi) btnLi.textContent = t('auth_btn_login');
