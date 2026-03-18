@@ -266,6 +266,83 @@ footer strong{color:var(--teal);}
 @media(max-width:800px){main{grid-template-columns:1fr;padding:1rem;}.sidebar{position:static;max-height:none;}.hero-inner{grid-template-columns:1fr;}.hero-stats{display:none;}.compare-grid,.geo-wrap,.structure-bar{grid-template-columns:1fr;}}
 ::-webkit-scrollbar{width:4px;height:4px;}::-webkit-scrollbar-track{background:var(--paper-warm);}::-webkit-scrollbar-thumb{background:var(--ink-ghost);border-radius:2px;}
 
+/* ── HOME PAGE ─────────────────────────────────────────────── */
+#home-page{position:fixed;inset:0;z-index:9998;background:#0a0f14;overflow-y:auto;display:flex;flex-direction:column;}
+.home-nav{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 3rem;border-bottom:1px solid rgba(255,255,255,.06);position:sticky;top:0;background:rgba(10,15,20,.92);backdrop-filter:blur(12px);z-index:10;}
+.home-nav-logo{display:flex;align-items:center;gap:10px;cursor:pointer;}
+.home-nav-lens{width:22px;height:22px;border-radius:50%;border:2px solid var(--teal-mid);display:flex;align-items:center;justify-content:center;}
+.home-nav-inner{width:7px;height:7px;border-radius:50%;background:var(--teal-mid);}
+.home-nav-name{font-family:'Playfair Display',serif;font-size:20px;color:#fff;letter-spacing:-.01em;}
+.home-nav-links{display:flex;align-items:center;gap:2rem;}
+.home-nav-link{font-size:12px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;transition:color .2s;background:none;border:none;padding:0;}
+.home-nav-link:hover{color:var(--teal-mid);}
+.home-nav-btns{display:flex;gap:8px;align-items:center;}
+.home-btn-ghost{padding:7px 18px;border:1px solid rgba(255,255,255,.2);border-radius:6px;background:transparent;color:rgba(255,255,255,.7);font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.home-btn-ghost:hover{border-color:var(--teal-mid);color:var(--teal-mid);}
+.home-btn-solid{padding:7px 20px;border:none;border-radius:6px;background:var(--teal);color:#fff;font-size:12px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .2s;letter-spacing:.04em;}
+.home-btn-solid:hover{background:#085f5b;}
+.home-hero{padding:7rem 3rem 5rem;max-width:1100px;margin:0 auto;width:100%;position:relative;box-sizing:border-box;}
+.home-hero-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--teal-mid);text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:8px;}
+.home-hero-eyebrow::before{content:'';width:28px;height:1px;background:var(--teal-mid);}
+.home-hero-title{font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,68px);line-height:1.08;color:#fff;letter-spacing:-.03em;margin-bottom:1.5rem;max-width:780px;}
+.home-hero-title em{color:var(--teal-mid);font-style:italic;}
+.home-hero-sub{font-size:15px;color:rgba(255,255,255,.42);max-width:520px;line-height:1.8;margin-bottom:2.5rem;font-weight:300;}
+.home-hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:3.5rem;}
+.home-cta-primary{padding:13px 30px;background:var(--teal);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .25s;}
+.home-cta-primary:hover{background:#085f5b;transform:translateY(-1px);box-shadow:0 8px 24px rgba(11,122,117,.3);}
+.home-cta-secondary{padding:13px 30px;background:transparent;color:rgba(255,255,255,.65);border:1px solid rgba(255,255,255,.18);border-radius:8px;font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .25s;}
+.home-cta-secondary:hover{border-color:rgba(255,255,255,.45);color:#fff;}
+.home-hero-stats{display:flex;gap:2.5rem;padding-top:2.5rem;border-top:1px solid rgba(255,255,255,.07);flex-wrap:wrap;}
+.home-stat-num{font-family:'Playfair Display',serif;font-size:26px;color:#fff;letter-spacing:-.02em;}
+.home-stat-num span{color:var(--teal-mid);}
+.home-stat-lbl{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.28);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;}
+.home-section{padding:5rem 3rem;max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box;}
+.home-section-eyebrow{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.18em;color:var(--teal-mid);text-transform:uppercase;margin-bottom:.6rem;display:flex;align-items:center;gap:8px;}
+.home-section-eyebrow::before{content:'';width:20px;height:1px;background:var(--teal-mid);}
+.home-section-title{font-family:'Playfair Display',serif;font-size:clamp(24px,2.8vw,38px);color:#fff;letter-spacing:-.02em;margin-bottom:.65rem;line-height:1.15;}
+.home-section-sub{font-size:13.5px;color:rgba(255,255,255,.38);max-width:480px;line-height:1.75;margin-bottom:3rem;}
+.home-divider{border:none;border-top:1px solid rgba(255,255,255,.06);margin:0;}
+.home-feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);margin-bottom:1rem;}
+.home-feat-item{background:#0a0f14;padding:1.75rem;transition:background .2s;}
+.home-feat-item:hover{background:#0e1620;}
+.home-feat-icon{font-size:20px;margin-bottom:.8rem;}
+.home-feat-name{font-family:'Playfair Display',serif;font-size:15px;color:rgba(255,255,255,.9);margin-bottom:.35rem;}
+.home-feat-desc{font-size:11.5px;color:rgba(255,255,255,.32);line-height:1.65;}
+.home-feat-tag{display:inline-block;font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:3px;margin-top:.55rem;letter-spacing:.05em;}
+.feat-tag-core{background:rgba(58,175,169,.12);color:var(--teal-mid);}
+.feat-tag-new{background:rgba(201,130,10,.12);color:#f0b429;}
+.feat-tag-spatial{background:rgba(92,61,143,.18);color:#a78bda;}
+.home-steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;}
+.home-step-num{font-family:'Playfair Display',serif;font-size:42px;color:rgba(255,255,255,.05);line-height:1;margin-bottom:.4rem;}
+.home-step-title{font-size:13.5px;font-weight:600;color:rgba(255,255,255,.8);margin-bottom:.35rem;}
+.home-step-desc{font-size:12px;color:rgba(255,255,255,.32);line-height:1.65;}
+.home-step-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);margin-bottom:1rem;}
+.home-about-grid{display:grid;grid-template-columns:1fr 1.5fr;gap:4rem;align-items:start;}
+.home-about-card{background:rgba(11,122,117,.06);border:1px solid rgba(11,122,117,.12);border-radius:12px;padding:1.75rem;}
+.home-about-avatar{width:56px;height:56px;border-radius:50%;background:rgba(11,122,117,.2);border:2px solid rgba(11,122,117,.3);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:22px;color:var(--teal-mid);margin-bottom:1rem;}
+.home-about-name{font-family:'Playfair Display',serif;font-size:20px;color:#fff;margin-bottom:.2rem;}
+.home-about-role{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--teal-mid);letter-spacing:.1em;text-transform:uppercase;margin-bottom:.75rem;}
+.home-about-inst{font-size:12px;color:rgba(255,255,255,.35);line-height:1.7;}
+.home-about-body{font-size:13.5px;color:rgba(255,255,255,.45);line-height:1.9;}
+.home-about-body p{margin-bottom:.9rem;}
+.home-about-body strong{color:rgba(255,255,255,.75);}
+.home-footer-bar{border-top:1px solid rgba(255,255,255,.06);padding:1.75rem 3rem;display:flex;align-items:center;justify-content:space-between;margin-top:auto;}
+.home-footer-l{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:.05em;}
+.home-footer-r{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,.18);letter-spacing:.06em;}
+.fade-up{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
+.fade-up.visible{opacity:1;transform:none;}
+@media(max-width:900px){
+  .home-nav{padding:1rem 1.25rem;}.home-nav-links{display:none;}
+  .home-hero,.home-section{padding:3.5rem 1.25rem;}
+  .home-feat-grid{grid-template-columns:repeat(2,1fr);}
+  .home-steps-grid{grid-template-columns:repeat(2,1fr);gap:1.5rem;}
+  .home-about-grid{grid-template-columns:1fr;gap:2rem;}
+  .home-footer-bar{flex-direction:column;gap:.4rem;padding:1.25rem;text-align:center;}
+}
+@media(max-width:560px){
+  .home-feat-grid{grid-template-columns:1fr;}
+  .home-steps-grid{grid-template-columns:1fr;}
+}
 /* ── AUTH OVERLAY ───────────────────────────────────── */
 #auth-overlay{position:fixed;inset:0;z-index:9999;background:var(--ink);display:flex;align-items:center;justify-content:center;padding:1rem;}
 .auth-wrap{width:100%;max-width:420px;animation:authIn .35s cubic-bezier(.22,1,.36,1);}
@@ -325,6 +402,226 @@ footer strong{color:var(--teal);}
 </style>
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════════
+     HOME PAGE — tampil pertama kali saat kunjungi
+     ══════════════════════════════════════════════════ -->
+<div id="home-page">
+
+  <!-- NAV -->
+  <nav class="home-nav">
+    <div class="home-nav-logo" onclick="document.getElementById('home-hero').scrollIntoView({behavior:'smooth'})">
+      <div class="home-nav-lens"><div class="home-nav-inner"></div></div>
+      <div class="home-nav-name">DiscourseLens</div>
+    </div>
+    <div class="home-nav-links">
+      <button class="home-nav-link" data-i18n="home_nav_features" onclick="document.getElementById('home-features').scrollIntoView({behavior:'smooth'})">Fitur</button>
+      <button class="home-nav-link" data-i18n="home_nav_howto" onclick="document.getElementById('home-howto').scrollIntoView({behavior:'smooth'})">Cara Pakai</button>
+      <button class="home-nav-link" data-i18n="home_nav_about" onclick="document.getElementById('home-about').scrollIntoView({behavior:'smooth'})">Tentang</button>
+    </div>
+    <div class="home-nav-btns">
+      <!-- Lang switcher di home nav -->
+      <div class="lang-switcher" style="margin-right:4px;">
+        <button class="lang-btn home-lang-id active" onclick="setLang('id')">🇮🇩 ID</button>
+        <button class="lang-btn home-lang-en" onclick="setLang('en')">🇬🇧 EN</button>
+      </div>
+      <button class="home-btn-ghost" data-i18n="home_btn_login" onclick="homeShowAuth('login')">Masuk</button>
+      <button class="home-btn-solid" data-i18n="home_btn_register" onclick="homeShowAuth('register')">Daftar Gratis</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="home-hero" id="home-hero">
+    <div class="home-hero-eyebrow" data-i18n="home_eyebrow">Platform Analisis Wacana Kritis · v4.2</div>
+    <h1 class="home-hero-title">
+      <span data-i18n="home_hero_line1">See what text</span><br>
+      <em data-i18n="home_hero_line2">really means.</em>
+    </h1>
+    <p class="home-hero-sub" data-i18n="home_hero_sub">Platform analisis korpus digital terlengkap untuk penelitian wacana kritis — dari KWIC dan kolokasi hingga keyness, NER, POS tagging, dan laporan otomatis. Semua berjalan langsung di browser kamu.</p>
+    <div class="home-hero-btns">
+      <button class="home-cta-primary" data-i18n="home_cta_primary" onclick="homeShowAuth('register')">Mulai Gratis Sekarang →</button>
+      <button class="home-cta-secondary" data-i18n="home_cta_secondary" onclick="homeShowAuth('login')">Sudah punya akun? Masuk</button>
+    </div>
+    <div class="home-hero-stats">
+      <div>
+        <div class="home-stat-num">18<span>+</span></div>
+        <div class="home-stat-lbl" data-i18n="home_stat_features">Fitur analisis</div>
+      </div>
+      <div>
+        <div class="home-stat-num">100<span>%</span></div>
+        <div class="home-stat-lbl" data-i18n="home_stat_browser">Berjalan di browser</div>
+      </div>
+      <div>
+        <div class="home-stat-num">2<span> bahasa</span></div>
+        <div class="home-stat-lbl" data-i18n="home_stat_lang">Indonesia & English</div>
+      </div>
+      <div>
+        <div class="home-stat-num">0<span> Rp</span></div>
+        <div class="home-stat-lbl" data-i18n="home_stat_free">Gratis untuk peneliti</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="home-divider">
+
+  <!-- FITUR -->
+  <section class="home-section fade-up" id="home-features">
+    <div class="home-section-eyebrow" data-i18n="home_feat_eyebrow">18 Fitur Analisis</div>
+    <h2 class="home-section-title" data-i18n="home_feat_title">Alat lengkap untuk<br>penelitian wacana</h2>
+    <p class="home-section-sub" data-i18n="home_feat_sub">Dari analisis leksikal dasar hingga visualisasi spasial-temporal yang canggih — semua terintegrasi dalam satu platform.</p>
+    <div class="home-feat-grid">
+      <div class="home-feat-item">
+        <div class="home-feat-icon">🔍</div>
+        <div class="home-feat-name" data-i18n="home_f1_name">Konkordansi (KWIC)</div>
+        <div class="home-feat-desc" data-i18n="home_f1_desc">Temukan setiap kemunculan kata kunci dalam konteks teks kiri-kanan secara sejajar dan sistematis.</div>
+        <span class="home-feat-tag feat-tag-core">CORE</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">📊</div>
+        <div class="home-feat-name" data-i18n="home_f2_name">Frekuensi & N-gram</div>
+        <div class="home-feat-desc" data-i18n="home_f2_desc">Hitung distribusi unigram, bigram, trigram dengan grafik bar dan pie yang interaktif.</div>
+        <span class="home-feat-tag feat-tag-core">CORE</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">🔗</div>
+        <div class="home-feat-name" data-i18n="home_f3_name">Kolokasi & Asosiasi</div>
+        <div class="home-feat-desc" data-i18n="home_f3_desc">Ukur kekuatan asosiasi leksikal dengan skor MI, T-score, dan frekuensi ko-okurens.</div>
+        <span class="home-feat-tag feat-tag-core">CORE</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">⚡</div>
+        <div class="home-feat-name" data-i18n="home_f4_name">Keyness Analysis</div>
+        <div class="home-feat-desc" data-i18n="home_f4_desc">Identifikasi kata yang secara statistik khas dalam korpus menggunakan Log-Likelihood G².</div>
+        <span class="home-feat-tag feat-tag-new">NEW v4</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">💬</div>
+        <div class="home-feat-name" data-i18n="home_f5_name">Analisis Sentimen</div>
+        <div class="home-feat-desc" data-i18n="home_f5_desc">Klasifikasi orientasi evaluatif teks dengan leksikon AWK 650+ kata khusus wacana kritis.</div>
+        <span class="home-feat-tag feat-tag-core">CORE</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">🏷️</div>
+        <div class="home-feat-name" data-i18n="home_f6_name">POS Tagging</div>
+        <div class="home-feat-desc" data-i18n="home_f6_desc">Labeling kelas kata otomatis + deteksi 26 frasa nominal AWK sebagai unit makna.</div>
+        <span class="home-feat-tag feat-tag-new">NEW v4</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">👤</div>
+        <div class="home-feat-name" data-i18n="home_f7_name">Deteksi Entitas (NER)</div>
+        <div class="home-feat-desc" data-i18n="home_f7_desc">Kenali tokoh, organisasi, lokasi, dan penanda waktu secara otomatis dari teks korpus.</div>
+        <span class="home-feat-tag feat-tag-new">NEW v4</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">✍️</div>
+        <div class="home-feat-name" data-i18n="home_f8_name">Anotasi Manual</div>
+        <div class="home-feat-desc" data-i18n="home_f8_desc">Beri label kualitatif pada segmen teks dengan sistem koding yang tersimpan otomatis.</div>
+        <span class="home-feat-tag feat-tag-new">NEW v4</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">🕸️</div>
+        <div class="home-feat-name" data-i18n="home_f9_name">Network Graf</div>
+        <div class="home-feat-desc" data-i18n="home_f9_desc">Visualisasi jaringan semantik kata berbasis D3.js — interaktif dan dapat diekspor SVG.</div>
+        <span class="home-feat-tag feat-tag-spatial">SPASIAL</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">🗺️</div>
+        <div class="home-feat-name" data-i18n="home_f10_name">Peta Geografis</div>
+        <div class="home-feat-desc" data-i18n="home_f10_desc">Visualisasi sebaran wilayah Indonesia yang disebutkan dalam korpus di atas peta skematik.</div>
+        <span class="home-feat-tag feat-tag-spatial">SPASIAL</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">📖</div>
+        <div class="home-feat-name" data-i18n="home_f11_name">Analisis Narasi</div>
+        <div class="home-feat-desc" data-i18n="home_f11_desc">Bedah struktur naratif (awal-tengah-akhir), sudut pandang, dan framing dominan teks.</div>
+        <span class="home-feat-tag feat-tag-core">CORE</span>
+      </div>
+      <div class="home-feat-item">
+        <div class="home-feat-icon">📄</div>
+        <div class="home-feat-name" data-i18n="home_f12_name">Laporan Otomatis</div>
+        <div class="home-feat-desc" data-i18n="home_f12_desc">Ekspor laporan HTML 13 seksi lengkap yang siap cetak sebagai PDF dalam satu klik.</div>
+        <span class="home-feat-tag feat-tag-new">NEW v4</span>
+      </div>
+    </div>
+  </section>
+
+  <hr class="home-divider">
+
+  <!-- CARA PAKAI -->
+  <section class="home-section fade-up" id="home-howto">
+    <div class="home-section-eyebrow" data-i18n="home_howto_eyebrow">Panduan Penggunaan</div>
+    <h2 class="home-section-title" data-i18n="home_howto_title">Mulai analisis dalam<br>empat langkah</h2>
+    <p class="home-section-sub" data-i18n="home_howto_sub">Tidak perlu instalasi, tidak perlu server. Semua berjalan langsung di browser.</p>
+    <div class="home-steps-grid">
+      <div>
+        <div class="home-step-dot"></div>
+        <div class="home-step-num">01</div>
+        <div class="home-step-title" data-i18n="home_s1_title">Daftar akun</div>
+        <div class="home-step-desc" data-i18n="home_s1_desc">Buat akun gratis dengan email dan password. Akun kamu aman tersimpan dengan enkripsi SHA-256.</div>
+      </div>
+      <div>
+        <div class="home-step-dot"></div>
+        <div class="home-step-num">02</div>
+        <div class="home-step-title" data-i18n="home_s2_title">Input korpus</div>
+        <div class="home-step-desc" data-i18n="home_s2_desc">Tempel teks, upload file .txt, scan gambar via OCR, atau bandingkan dua korpus sekaligus.</div>
+      </div>
+      <div>
+        <div class="home-step-dot"></div>
+        <div class="home-step-num">03</div>
+        <div class="home-step-title" data-i18n="home_s3_title">Pilih analisis</div>
+        <div class="home-step-desc" data-i18n="home_s3_desc">Pilih dari 18 fitur analisis. Setiap fitur dilengkapi definisi, formula, dan interpretasi AWK.</div>
+      </div>
+      <div>
+        <div class="home-step-dot"></div>
+        <div class="home-step-num">04</div>
+        <div class="home-step-title" data-i18n="home_s4_title">Ekspor hasil</div>
+        <div class="home-step-desc" data-i18n="home_s4_desc">Unduh hasil sebagai CSV, ekspor laporan PDF, atau simpan sesi untuk dilanjutkan nanti.</div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="home-divider">
+
+  <!-- TENTANG PENGEMBANG -->
+  <section class="home-section fade-up" id="home-about">
+    <div class="home-section-eyebrow" data-i18n="home_about_eyebrow">Tentang Platform</div>
+    <h2 class="home-section-title" data-i18n="home_about_title">Dibangun untuk<br>penelitian AWK</h2>
+    <div class="home-about-grid">
+      <div>
+        <div class="home-about-card">
+          <div class="home-about-avatar">A</div>
+          <div class="home-about-name">Ahmad Habibi Syahid</div>
+          <div class="home-about-role">Pengembang Platform</div>
+          <div class="home-about-inst">
+            Kelas Menulis Ilmiah<br>
+            https://kangabe.my.id<br>
+            <br>
+            ✉ syahid.abib@gmail.com
+          </div>
+        </div>
+      </div>
+      <div class="home-about-body">
+        <p data-i18n="home_about_body1"><strong>DiscourseLens</strong> adalah platform analisis wacana kritis berbasis web yang dirancang untuk mendukung penelitian linguistik, pendidikan bahasa, dan studi media di era digital.</p>
+        <p data-i18n="home_about_body2">Platform ini mengintegrasikan pendekatan <strong>korpus kuantitatif</strong> dengan interpretasi <strong>kualitatif AWK</strong>, memungkinkan peneliti menganalisis teks dari berbagai dimensi: leksikal, gramatikal, semantik, pragmatik, dan sosial-kritis.</p>
+        <p data-i18n="home_about_body3">Seluruh proses analisis berjalan di browser pengguna — <strong>tidak ada data yang dikirim ke server eksternal</strong>. Data korpus penelitian kamu tetap privat dan aman.</p>
+        <p style="color:rgba(255,255,255,.22);font-size:12px;" data-i18n="home_about_license">DiscourseLens v4.2 · MIT License · Dibuat dengan ❤ untuk komunitas peneliti Global</p>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding:4rem 3rem;text-align:center;max-width:1100px;margin:0 auto;width:100%;box-sizing:border-box;" class="fade-up">
+    <div style="font-family:'Playfair Display',serif;font-size:clamp(22px,3vw,36px);color:#fff;margin-bottom:.75rem;letter-spacing:-.02em;" data-i18n="home_cta_bottom_title">Siap memulai analisis<br>wacana kamu?</div>
+    <p style="font-size:13.5px;color:rgba(255,255,255,.35);margin-bottom:2rem;" data-i18n="home_cta_bottom_sub">Gratis. Tanpa instalasi. Langsung di browser.</p>
+    <button class="home-cta-primary" style="font-size:15px;padding:15px 40px;" data-i18n="home_cta_bottom_btn" onclick="homeShowAuth('register')">Daftar Sekarang — Gratis →</button>
+  </section>
+
+  <!-- FOOTER -->
+  <div class="home-footer-bar">
+    <div class="home-footer-l" data-i18n="home_footer_l">© 2026 DiscourseLens · See What Text Really Means</div>
+    <div class="home-footer-r" data-i18n="home_footer_r">v4.2 · Platform Analisis Wacana Kritis</div>
+  </div>
+
+</div><!-- end #home-page -->
 
 <!-- ── AUTH OVERLAY ─────────────────────────────────── -->
 <div id="auth-overlay">
@@ -1889,12 +2186,101 @@ function exportCSV(type){
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=m.fn;a.click();URL.revokeObjectURL(url);
 }
 // ══════════════════════════════════════════════════════════════
-// ★ SISTEM BILINGUAL — Indonesia / English
+// ★ HOME PAGE — Navigasi & Animasi
+// ══════════════════════════════════════════════════════════════
+
+function homeShowAuth(tab) {
+  // Sembunyikan home, tampilkan auth overlay
+  const home = document.getElementById('home-page');
+  home.style.opacity = '0';
+  home.style.transition = 'opacity .3s ease';
+  setTimeout(() => {
+    home.style.display = 'none';
+    const overlay = document.getElementById('auth-overlay');
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity .3s ease';
+    setTimeout(() => { overlay.style.opacity = '1'; }, 20);
+    authSwitchTab(tab || 'login');
+  }, 300);
+}
+
+function homeShow() {
+  // Kembali ke home dari overlay
+  const overlay = document.getElementById('auth-overlay');
+  overlay.style.opacity = '0';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    const home = document.getElementById('home-page');
+    home.style.display = 'flex';
+    home.style.opacity = '0';
+    setTimeout(() => { home.style.opacity = '1'; }, 20);
+    home.scrollTo(0, 0);
+  }, 250);
+}
+
+// Scroll fade-up animations via IntersectionObserver
+document.addEventListener('DOMContentLoaded', () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+});
+
+
 // ══════════════════════════════════════════════════════════════
 const I18N = {
   id: {
-    // ── Auth overlay ──
-    auth_tab_login:'Masuk', auth_tab_register:'Daftar',
+    // ── Home nav ──
+    home_nav_features:'Fitur', home_nav_howto:'Cara Pakai', home_nav_about:'Tentang',
+    home_btn_login:'Masuk', home_btn_register:'Daftar Gratis',
+    // ── Home hero ──
+    home_eyebrow:'Platform Analisis Wacana Kritis · v4.2',
+    home_hero_line1:'See what text',
+    home_hero_line2:'really means.',
+    home_hero_sub:'Platform analisis korpus digital terlengkap untuk penelitian wacana kritis — dari KWIC dan kolokasi hingga keyness, NER, POS tagging, dan laporan otomatis. Semua berjalan langsung di browser kamu.',
+    home_cta_primary:'Mulai Gratis Sekarang →',
+    home_cta_secondary:'Sudah punya akun? Masuk',
+    home_stat_features:'Fitur analisis', home_stat_browser:'Berjalan di browser',
+    home_stat_lang:'Indonesia & English', home_stat_free:'Gratis untuk peneliti',
+    // ── Home features ──
+    home_feat_title:'Alat lengkap untuk<br>penelitian wacana',
+    home_feat_eyebrow:'18 Fitur Analisis',
+    home_feat_sub:'Dari analisis leksikal dasar hingga visualisasi spasial-temporal yang canggih — semua terintegrasi dalam satu platform.',
+    home_f1_name:'Konkordansi (KWIC)', home_f1_desc:'Temukan setiap kemunculan kata kunci dalam konteks teks kiri-kanan secara sejajar dan sistematis.',
+    home_f2_name:'Frekuensi & N-gram', home_f2_desc:'Hitung distribusi unigram, bigram, trigram dengan grafik bar dan pie yang interaktif.',
+    home_f3_name:'Kolokasi & Asosiasi', home_f3_desc:'Ukur kekuatan asosiasi leksikal dengan skor MI, T-score, dan frekuensi ko-okurens.',
+    home_f4_name:'Keyness Analysis', home_f4_desc:'Identifikasi kata yang secara statistik khas dalam korpus menggunakan Log-Likelihood G².',
+    home_f5_name:'Analisis Sentimen', home_f5_desc:'Klasifikasi orientasi evaluatif teks dengan leksikon AWK 650+ kata khusus wacana kritis.',
+    home_f6_name:'POS Tagging', home_f6_desc:'Labeling kelas kata otomatis + deteksi 26 frasa nominal AWK sebagai unit makna.',
+    home_f7_name:'Deteksi Entitas (NER)', home_f7_desc:'Kenali tokoh, organisasi, lokasi, dan penanda waktu secara otomatis dari teks korpus.',
+    home_f8_name:'Anotasi Manual', home_f8_desc:'Beri label kualitatif pada segmen teks dengan sistem koding yang tersimpan otomatis.',
+    home_f9_name:'Network Graf', home_f9_desc:'Visualisasi jaringan semantik kata berbasis D3.js — interaktif dan dapat diekspor SVG.',
+    home_f10_name:'Peta Geografis', home_f10_desc:'Visualisasi sebaran wilayah Indonesia yang disebutkan dalam korpus di atas peta skematik.',
+    home_f11_name:'Analisis Narasi', home_f11_desc:'Bedah struktur naratif (awal-tengah-akhir), sudut pandang, dan framing dominan teks.',
+    home_f12_name:'Laporan Otomatis', home_f12_desc:'Ekspor laporan HTML 13 seksi lengkap yang siap cetak sebagai PDF dalam satu klik.',
+    // ── Home how to ──
+    home_howto_eyebrow:'Panduan Penggunaan',
+    home_howto_title:'Mulai analisis dalam<br>empat langkah',
+    home_howto_sub:'Tidak perlu instalasi, tidak perlu server. Semua berjalan langsung di browser.',
+    home_s1_title:'Daftar akun', home_s1_desc:'Buat akun gratis dengan email dan password. Akun kamu aman tersimpan dengan enkripsi SHA-256.',
+    home_s2_title:'Input korpus', home_s2_desc:'Tempel teks, upload file .txt, scan gambar via OCR, atau bandingkan dua korpus sekaligus.',
+    home_s3_title:'Pilih analisis', home_s3_desc:'Pilih dari 18 fitur analisis. Setiap fitur dilengkapi definisi, formula, dan interpretasi AWK.',
+    home_s4_title:'Ekspor hasil', home_s4_desc:'Unduh hasil sebagai CSV, ekspor laporan PDF, atau simpan sesi untuk dilanjutkan nanti.',
+    // ── Home about ──
+    home_about_eyebrow:'Tentang Platform',
+    home_about_title:'Dibangun untuk<br>penelitian AWK',
+    home_about_body1:'<strong>DiscourseLens</strong> adalah platform analisis wacana kritis berbasis web yang dirancang untuk mendukung penelitian linguistik, pendidikan bahasa, dan studi media di era digital.',
+    home_about_body2:'Platform ini mengintegrasikan pendekatan <strong>korpus kuantitatif</strong> dengan interpretasi <strong>kualitatif AWK</strong>, memungkinkan peneliti menganalisis teks dari berbagai dimensi: leksikal, gramatikal, semantik, pragmatik, dan sosial-kritis.',
+    home_about_body3:'Seluruh proses analisis berjalan di browser pengguna — <strong>tidak ada data yang dikirim ke server eksternal</strong>. Data korpus penelitian kamu tetap privat dan aman.',
+    home_about_license:'DiscourseLens v4.2 · MIT License · Dibuat dengan ❤ untuk komunitas peneliti Indonesia',
+    // ── Home CTA bottom ──
+    home_cta_bottom_title:'Siap memulai analisis<br>wacana kamu?',
+    home_cta_bottom_sub:'Gratis. Tanpa instalasi. Langsung di browser.',
+    home_cta_bottom_btn:'Daftar Sekarang — Gratis →',
+    // ── Home footer ──
+    home_footer_l:'© 2026 DiscourseLens · See What Text Really Means',
+    home_footer_r:'v4.2 · Platform Analisis Wacana Kritis',
     auth_title_login:'Selamat datang', auth_sub_login:'Masuk ke akun DiscourseLens kamu',
     auth_title_register:'Buat akun baru', auth_sub_register:'Daftar gratis, gunakan semua fitur',
     auth_label_name:'Nama Lengkap', auth_label_email:'Email', auth_label_pass:'Password',
@@ -1968,8 +2354,56 @@ const I18N = {
   },
 
   en: {
-    // ── Auth overlay ──
-    auth_tab_login:'Sign In', auth_tab_register:'Register',
+    // ── Home nav ──
+    home_nav_features:'Features', home_nav_howto:'How to Use', home_nav_about:'About',
+    home_btn_login:'Sign In', home_btn_register:'Register Free',
+    // ── Home hero ──
+    home_eyebrow:'Critical Discourse Analysis Platform · v4.2',
+    home_hero_line1:'See what text',
+    home_hero_line2:'really means.',
+    home_hero_sub:'The most complete digital corpus analysis platform for critical discourse research — from KWIC and collocation to keyness, NER, POS tagging, and automatic reports. Everything runs directly in your browser.',
+    home_cta_primary:'Start Free Now →',
+    home_cta_secondary:'Already have an account? Sign in',
+    home_stat_features:'Analysis features', home_stat_browser:'Runs in browser',
+    home_stat_lang:'Indonesia & English', home_stat_free:'Free for researchers',
+    // ── Home features ──
+    home_feat_eyebrow:'18 Analysis Features',
+    home_feat_title:'Complete tools for<br>discourse research',
+    home_feat_sub:'From basic lexical analysis to advanced spatio-temporal visualization — all integrated in one platform.',
+    home_f1_name:'Concordance (KWIC)', home_f1_desc:'Find every occurrence of a keyword in its left-right textual context, displayed in aligned rows.',
+    home_f2_name:'Frequency & N-gram', home_f2_desc:'Calculate unigram, bigram, trigram distribution with interactive bar and pie charts.',
+    home_f3_name:'Collocation & Association', home_f3_desc:'Measure lexical association strength with MI score, T-score, and co-occurrence frequency.',
+    home_f4_name:'Keyness Analysis', home_f4_desc:'Identify statistically distinctive words in the corpus using Log-Likelihood G² measure.',
+    home_f5_name:'Sentiment Analysis', home_f5_desc:'Classify evaluative orientation of text with a 650+ word AWK-specific lexicon.',
+    home_f6_name:'POS Tagging', home_f6_desc:'Automatic word class labeling + detection of 26 AWK nominal phrases as meaning units.',
+    home_f7_name:'Entity Detection (NER)', home_f7_desc:'Automatically recognize people, organizations, locations, and time markers in the corpus.',
+    home_f8_name:'Manual Annotation', home_f8_desc:'Apply qualitative labels to text segments with an auto-saving coding system.',
+    home_f9_name:'Network Graph', home_f9_desc:'D3.js-based semantic word network visualization — interactive and SVG-exportable.',
+    home_f10_name:'Geographic Map', home_f10_desc:'Visualize the distribution of Indonesian regions mentioned in the corpus on a schematic map.',
+    home_f11_name:'Narrative Analysis', home_f11_desc:'Dissect narrative structure (beginning-middle-end), point of view, and dominant framing.',
+    home_f12_name:'Automatic Report', home_f12_desc:'Export a complete 13-section HTML report ready to print as PDF in one click.',
+    // ── Home how to ──
+    home_howto_eyebrow:'How to Use',
+    home_howto_title:'Start analyzing in<br>four steps',
+    home_howto_sub:'No installation needed, no server required. Everything runs directly in your browser.',
+    home_s1_title:'Create account', home_s1_desc:'Sign up free with email and password. Your account is securely stored with SHA-256 encryption.',
+    home_s2_title:'Input corpus', home_s2_desc:'Paste text, upload .txt file, scan images via OCR, or compare two corpora simultaneously.',
+    home_s3_title:'Choose analysis', home_s3_desc:'Choose from 18 analysis features. Each feature includes definitions, formulas, and AWK interpretation.',
+    home_s4_title:'Export results', home_s4_desc:'Download results as CSV, export PDF reports, or save sessions to continue later.',
+    // ── Home about ──
+    home_about_eyebrow:'About the Platform',
+    home_about_title:'Built for<br>CDA research',
+    home_about_body1:'<strong>DiscourseLens</strong> is a web-based critical discourse analysis platform designed to support linguistic research, language education, and media studies in the digital era.',
+    home_about_body2:'The platform integrates <strong>quantitative corpus</strong> approaches with <strong>qualitative CDA</strong> interpretation, enabling researchers to analyze text across multiple dimensions: lexical, grammatical, semantic, pragmatic, and socio-critical.',
+    home_about_body3:'All analysis runs in the user\'s browser — <strong>no data is sent to external servers</strong>. Your research corpus data remains private and secure.',
+    home_about_license:'DiscourseLens v4.2 · MIT License · Built with ❤ for the Indonesian research community',
+    // ── Home CTA bottom ──
+    home_cta_bottom_title:'Ready to start your<br>discourse analysis?',
+    home_cta_bottom_sub:'Free. No installation. Directly in your browser.',
+    home_cta_bottom_btn:'Register Now — Free →',
+    // ── Home footer ──
+    home_footer_l:'© 2026 DiscourseLens · See What Text Really Means',
+    home_footer_r:'v4.2 · Critical Discourse Analysis Platform',
     auth_title_login:'Welcome back', auth_sub_login:'Sign in to your DiscourseLens account',
     auth_title_register:'Create an account', auth_sub_register:'Register free, use all features',
     auth_label_name:'Full Name', auth_label_email:'Email', auth_label_pass:'Password',
@@ -2051,14 +2485,39 @@ function t(key){ return I18N[currentLang][key] || I18N['id'][key] || key; }
 function setLang(lang){
   currentLang = lang;
   try{ localStorage.setItem('dl_lang', lang); }catch(e){}
-  // Update tombol aktif
   document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
   const btn = document.getElementById('lang-' + lang);
   if(btn) btn.classList.add('active');
-  // Terapkan terjemahan
   applyI18N();
-  // Update auth overlay bahasa juga
   applyAuthI18N();
+  applyHomeI18N();
+}
+
+function applyHomeI18N(){
+  // Semua elemen home dengan data-i18n sudah ditangani oleh applyI18N() yang umum
+  // Fungsi ini untuk update elemen spesifik yang butuh innerHTML (ada tag <strong> dll)
+  const htmlKeys = [
+    'home_feat_title','home_howto_title','home_about_title',
+    'home_cta_bottom_title','home_about_body1','home_about_body2',
+    'home_about_body3','home_hero_title'
+  ];
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const val = I18N[currentLang][key] || I18N['id'][key];
+    if (!val) return;
+    // Gunakan innerHTML untuk teks yang mengandung tag HTML
+    if (htmlKeys.includes(key) || val.includes('<')) {
+      el.innerHTML = val;
+    } else {
+      el.textContent = val;
+    }
+  });
+  // Update lang switcher di home nav juga (clone dari header app)
+  const homeLangBtns = document.querySelectorAll('.home-lang-id, .home-lang-en');
+  homeLangBtns.forEach(b => {
+    const l = b.classList.contains('home-lang-en') ? 'en' : 'id';
+    b.classList.toggle('active', l === currentLang);
+  });
 }
 
 function applyI18N(){
@@ -2143,12 +2602,17 @@ function applyAuthI18N(){
 
 // Inisiasi bahasa saat halaman load
 document.addEventListener('DOMContentLoaded', () => {
-  // Deteksi bahasa browser secara otomatis
+  // Deteksi bahasa browser
   if(!localStorage.getItem('dl_lang')){
     const browserLang = navigator.language || navigator.userLanguage || 'id';
     currentLang = browserLang.startsWith('id') ? 'id' : 'en';
   }
   setLang(currentLang);
+  // Scroll fade-up animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 });
 
 
@@ -2495,47 +2959,77 @@ async function authConfirmReset(e) {
 function authLogout() {
   if (!confirm('Yakin ingin keluar dari DiscourseLens?')) return;
   AuthState.clear();
+  try { sessionStorage.removeItem('_dl_user'); } catch(e) {}
   document.getElementById('user-badge-wrap').style.display = 'none';
   document.getElementById('btn-logout').style.display = 'none';
-  document.getElementById('auth-overlay').style.display = 'flex';
-  document.getElementById('auth-overlay').style.opacity = '1';
-  authSwitchTab('login');
+  // Kembali ke home page (bukan auth overlay)
+  const overlay = document.getElementById('auth-overlay');
+  overlay.style.display = 'none';
+  const hp = document.getElementById('home-page');
+  hp.style.display = 'flex';
+  hp.style.opacity = '0';
+  hp.style.transition = 'opacity .35s';
+  setTimeout(() => { hp.style.opacity = '1'; hp.scrollTo(0,0); }, 20);
   authShowToast('Berhasil keluar. Sampai jumpa! 👋');
 }
 
 // ── INISIASI AWAL ─────────────────────────────────────────────────
-// Cek apakah ada session tersimpan (dari sessionStorage — hilang saat tab ditutup)
 (function initAuth(){
+  // Sembunyikan auth overlay — home page tampil duluan
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) overlay.style.display = 'none';
+
+  // Cek session aktif (tab belum ditutup)
   try {
     const saved = sessionStorage.getItem('_dl_user');
     if (saved) {
       const user = JSON.parse(saved);
-      if (user && user.email) { authEnterApp(user); return; }
+      if (user && user.email) {
+        // Ada session — langsung masuk app, sembunyikan home
+        const hp = document.getElementById('home-page');
+        if (hp) hp.style.display = 'none';
+        authEnterApp(user);
+        return;
+      }
     }
   } catch(e) {}
 
-  // Cek apakah URL mengandung ?reset=TOKEN (dari email reset password)
+  // Cek URL reset password (?reset=TOKEN)
   const params = new URLSearchParams(window.location.search);
   if (params.get('reset') && params.get('email')) {
-    // Jalankan setelah DOM siap
+    const hp = document.getElementById('home-page');
+    if (hp) hp.style.display = 'none';
+    if (overlay) overlay.style.display = 'flex';
     setTimeout(authCheckResetToken, 400);
     return;
   }
 
-  // Jika SHEETS_URL belum dikonfigurasi, tampilkan panduan
-  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
-    setTimeout(() => {
-      authShowMsg('⚙️ Sistem login belum dikonfigurasi. Ikuti panduan setup Google Sheets.', 'info');
-    }, 300);
-  }
+  // Normal — tampilkan home page
+  // Auth overlay tetap tersembunyi sampai user klik Login/Daftar
 })();
 
-// Simpan user ke sessionStorage setelah login (agar tidak perlu login ulang saat refresh)
+// Override authEnterApp — simpan session & sembunyikan home page
 const _origEnterApp = authEnterApp;
-// Override untuk tambahkan sessionStorage save
 window.authEnterApp = function(user) {
   try { sessionStorage.setItem('_dl_user', JSON.stringify(user)); } catch(e){}
+  // Sembunyikan home page jika masih tampil
+  const hp = document.getElementById('home-page');
+  if (hp) hp.style.display = 'none';
   _origEnterApp(user);
+};
+
+// Saat klik tombol Login/Daftar di home — cek konfigurasi dulu
+const _origHomeShowAuth = homeShowAuth;
+window.homeShowAuth = function(tab) {
+  if (SHEETS_URL === 'GANTI_DENGAN_WEB_APP_URL_DARI_APPS_SCRIPT') {
+    // Tetap buka overlay tapi dengan pesan info konfigurasi
+    _origHomeShowAuth(tab);
+    setTimeout(() => {
+      authShowMsg('⚙️ Sistem login belum dikonfigurasi. Ikuti panduan setup Google Sheets.', 'info');
+    }, 400);
+    return;
+  }
+  _origHomeShowAuth(tab);
 };
 
 </script>
