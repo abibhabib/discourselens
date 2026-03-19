@@ -809,7 +809,7 @@ footer strong{color:var(--teal);}
       <input type="file" id="img-input" accept="image/*">
       <div id="ocr-status"></div>
     </div>
-    <div id="compare-panel" style="display:none">
+    <div id="compare-input-panel" style="display:none">
       <p style="font-size:11.5px;color:var(--ink-muted);margin-bottom:.4rem;">Korpus A</p>
       <textarea id="corpus-a" placeholder="Tempel Korpus A..." style="min-height:80px;margin-bottom:.4rem;"></textarea>
       <p style="font-size:11.5px;color:var(--ink-muted);margin-bottom:.4rem;">Korpus B</p>
@@ -1184,7 +1184,10 @@ function updateStats(text){
 // ═══════════════════════════════════════════════════════
 function switchInput(m){
   currentInput=m;
-  ['paste','upload','ocr','compare'].forEach(p=>document.getElementById(p+'-panel').style.display=p===m?'block':'none');
+  document.getElementById('paste-panel').style.display   = m==='paste'   ?'block':'none';
+  document.getElementById('upload-panel').style.display  = m==='upload'  ?'block':'none';
+  document.getElementById('ocr-panel').style.display     = m==='ocr'     ?'block':'none';
+  document.getElementById('compare-input-panel').style.display = m==='compare'?'block':'none';
   document.querySelectorAll('.seg-btn').forEach((b,i)=>b.classList.toggle('active',['paste','upload','ocr','compare'][i]===m));
 }
 function switchFeat(f,btn){
@@ -1607,7 +1610,17 @@ function runDispersion(){
 // COMPARE
 // ═══════════════════════════════════════════════════════
 function runCompare(){
-  if(!tokensA.length||!tokensB.length){const a=document.getElementById('corpus-a').value.trim(),b=document.getElementById('corpus-b').value.trim();if(!a||!b){document.getElementById('compare-out').innerHTML=empty('Masukkan dua korpus di sidebar tab Bandingkan.');return;}tokensA=tokenize(a);tokensB=tokenize(b);rawA=a;rawB=b;}
+  // Selalu baca ulang dari textarea agar data selalu fresh
+  const a = document.getElementById('corpus-a').value.trim();
+  const b = document.getElementById('corpus-b').value.trim();
+  if(a) { rawA=a; tokensA=tokenize(a); }
+  if(b) { rawB=b; tokensB=tokenize(b); }
+  if(!tokensA.length||!tokensB.length){
+    document.getElementById('compare-out').innerHTML=
+      '<div style="text-align:center;padding:2rem;color:var(--ink-muted);font-size:13px;">'+
+      '⚠️ Isi Korpus A dan B di tab <strong>Bandingkan</strong> di sidebar, lalu klik <strong>Mulai Analisis</strong>.</div>';
+    return;
+  }
   const fA=freqMap(getFiltered(tokensA)),fB=freqMap(getFiltered(tokensB));
   const setA=new Set(Object.keys(fA)),setB=new Set(Object.keys(fB));
   const shared=[...setA].filter(w=>setB.has(w));
