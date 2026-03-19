@@ -1647,9 +1647,36 @@ function runNetwork(){
   sim.on('tick',()=>{link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);node.attr('transform',d=>`translate(${d.x},${d.y})`);});
 }
 function exportNetworkSVG(){
-  const svg=document.getElementById('network-svg');
-  const blob=new Blob([svg.outerHTML],{type:'image/svg+xml'});
-  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='network-graph.svg';a.click();URL.revokeObjectURL(url);
+  const svg = document.getElementById('network-svg');
+  if(!svg || !svg.querySelector('circle,line')){
+    alert('Bangun graf dulu sebelum mengekspor.');
+    return;
+  }
+  const styles = `<style>
+    circle { stroke-width: 1.5px; }
+    line.link { stroke: #a8b5c2; stroke-opacity: 0.6; }
+    text { font-family: Arial, sans-serif; font-size: 11px;
+           fill: #2c3e50; pointer-events: none; }
+  </style>`;
+  const clone = svg.cloneNode(true);
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+  clone.style.background = '#f8f7f4';
+  clone.insertAdjacentHTML('afterbegin', styles);
+  const bgRect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bgRect.setAttribute('width','100%');
+  bgRect.setAttribute('height','100%');
+  bgRect.setAttribute('fill','#f8f7f4');
+  clone.insertBefore(bgRect, clone.firstChild);
+  const xml = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
+  const blob = new Blob([xml + clone.outerHTML],
+                        {type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'network-graph-discourseLens.svg';
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════════════════════
