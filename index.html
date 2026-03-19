@@ -1070,9 +1070,11 @@ footer strong{color:var(--teal);}
     <div id="heatmap-panel" class="fpanel card">
       <div class="panel-title">Heatmap Frekuensi <span class="pbadge pb-sp">SPASIAL</span></div>
       <div class="ctrl">
-        <input type="text" id="hm-words" placeholder="Kata (pisah koma)..." style="flex:1">
-        <input type="number" id="hm-segs" value="10" min="3" max="30" style="width:52px">
-        <button class="go-btn" onclick="runHeatmap()">Buat Heatmap</button>
+          <input type="text" id="hm-words" placeholder="Kata (pisah koma)..." style="flex:1">
+          <input type="number" id="hm-segs" value="10" min="3" max="30" style="width:52px">
+          <button class="go-btn" onclick="runHeatmap()">Buat Heatmap</button>
+          <button class="exp-btn" onclick="exportHeatmapCSV()">↓ CSV</button>
+          <button class="exp-btn" onclick="exportHeatmapPNG()">↓ PNG</button>
       </div>
       <div id="heatmap-out"></div>
     </div>
@@ -1087,7 +1089,13 @@ footer strong{color:var(--teal);}
     <!-- GEO -->
     <div id="geo-panel" class="fpanel card">
       <div class="panel-title">Peta Geografis <span class="pbadge pb-sp">SPASIAL</span></div>
-      <div class="ctrl"><button class="go-btn" onclick="runGeo()">Deteksi Wilayah</button><button class="exp-btn" onclick="exportCSV('geo')">↓ CSV</button></div>
+      <div class="ctrl">
+        <button class="go-btn" onclick="runGeo()">Deteksi Wilayah</button>
+        <button class="exp-btn" onclick="exportCSV('geo')">↓ CSV</button>
+        <button class="exp-btn" onclick="exportGeoSVG()">↓ SVG</button>
+        <button class="exp-btn" onclick="exportGeoPNG()">↓ PNG</button>
+        <button class="exp-btn" onclick="exportGeoJSON()">↓ JSON</button>
+      </div>
       <div id="geo-out"></div>
     </div>
   </div>
@@ -1700,6 +1708,61 @@ function runHeatmap(){
   data.forEach((row,si)=>{html+=`<div style="display:grid;grid-template-columns:50px repeat(${words.length},1fr);gap:2px;margin-bottom:2px;"><div style="font-size:9.5px;font-family:'DM Mono',monospace;color:var(--ink-muted);display:flex;align-items:center;">S${si+1}</div>`;row.forEach(v=>{html+=`<div title="${v}" style="height:24px;background:${gc(v)};border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-family:'DM Mono',monospace;color:${tc(v)};">${v||''}</div>`;});html+='</div>';});
   html+='</div><p style="font-size:10px;color:var(--ink-muted);font-family:\'DM Mono\',monospace;margin-top:.4rem;">S = segmen · warna gelap = frekuensi tinggi</p>';
   document.getElementById('heatmap-out').innerHTML=html;
+  // Simpan data untuk keperluan ekspor
+  lastHeatmapData = { words, data };
+}
+
+// ── EKSPOR HEATMAP ────────────────────────────────────────────
+// Simpan data heatmap untuk ekspor
+let lastHeatmapData = { words:[], data:[] };
+
+function exportHeatmapCSV(){
+  if(!lastHeatmapData.words.length){
+    alert('Buat heatmap dulu sebelum mengekspor.');
+    return;
+  }
+  const { words, data } = lastHeatmapData;
+  let csv = 'Segmen,' + words.join(',') + '\n';
+  data.forEach((row, i) => {
+    csv += `S${i+1},` + row.join(',') + '\n';
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'heatmap-frekuensi.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportHeatmapPNG(){
+  const container = document.getElementById('heatmap-out');
+  if(!container || !container.querySelector('.hm-wrap')){
+    alert('Buat heatmap dulu sebelum mengekspor.');
+    return;
+  }
+  // Gunakan html2canvas via CDN
+  if(typeof html2canvas === 'undefined'){
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    script.onload = () => doExportPNG(container);
+    document.head.appendChild(script);
+  } else {
+    doExportPNG(container);
+  }
+}
+
+function doExportPNG(container){
+  html2canvas(container, {
+    backgroundColor: '#f8f7f4',
+    scale: 2,           // resolusi 2x untuk kualitas tinggi
+    useCORS: true,
+    logging: false
+  }).then(canvas => {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'heatmap-frekuensi.png';
+    a.click();
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1726,6 +1789,89 @@ function runGeo(){
   lastGeo.slice(0,15).forEach(([place,cnt],i)=>{const coords=GEO_ID[place];if(!coords)return;const[lat,lng]=coords,x=((parseFloat(lng)-95)/(141-95))*480+10,y=(280-(parseFloat(lat)+11)/(11+6)*260),r=Math.max(5,Math.min(18,5+(cnt/maxC)*13)),col=colors[i%colors.length];html+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${col}" opacity="0.75" stroke="white" stroke-width="1.5"><title>${place}: ${cnt}x</title></circle>`;if(r>7)html+=`<text x="${x.toFixed(1)}" y="${(y+4).toFixed(1)}" text-anchor="middle" fill="white" font-size="8.5" font-family="DM Mono,monospace">${place.slice(0,6)}</text>`;});
   html+='</svg></div><div class="geo-list-area">'+lastGeo.slice(0,20).map(([place,cnt],i)=>`<div class="geo-item"><div class="geo-dot" style="background:${colors[i%colors.length]}"></div><div><div class="geo-name">${place}</div><div style="height:3px;border-radius:2px;background:${colors[i%colors.length]};width:${Math.round(cnt/maxC*100)}%;margin-top:3px;"></div></div><div class="geo-cnt">${cnt}x</div></div>`).join('')+'</div></div>';
   document.getElementById('geo-out').innerHTML=html;
+}
+
+// ── EKSPOR GEO MAP ────────────────────────────────────────────
+
+function exportGeoSVG(){
+  if(!lastGeo.length){ alert('Deteksi wilayah dulu.'); return; }
+  // Ambil elemen SVG peta dari dalam geo-out
+  const svgEl = document.querySelector('#geo-out svg');
+  if(!svgEl){ alert('Jalankan Deteksi Wilayah dulu.'); return; }
+  const clone = svgEl.cloneNode(true);
+  clone.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  clone.setAttribute('xmlns:xlink','http://www.w3.org/1999/xlink');
+  // Tambahkan judul dan legenda
+  const title = document.createElementNS('http://www.w3.org/2000/svg','text');
+  title.setAttribute('x','250'); title.setAttribute('y','18');
+  title.setAttribute('text-anchor','middle');
+  title.setAttribute('font-size','11'); title.setAttribute('font-family','Arial,sans-serif');
+  title.setAttribute('fill','#2c3e50'); title.setAttribute('font-weight','bold');
+  title.textContent = 'DiscourseLens — Sebaran Wilayah';
+  clone.insertBefore(title, clone.firstChild);
+  const xml = '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n';
+  const blob = new Blob([xml + clone.outerHTML],
+                        {type:'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'geomap-discourseLens.svg'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportGeoPNG(){
+  const container = document.getElementById('geo-out');
+  if(!lastGeo.length || !container.querySelector('svg')){
+    alert('Deteksi wilayah dulu.'); return;
+  }
+  if(typeof html2canvas === 'undefined'){
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => doGeoExportPNG(container);
+    document.head.appendChild(s);
+  } else {
+    doGeoExportPNG(container);
+  }
+}
+
+function doGeoExportPNG(container){
+  html2canvas(container, {
+    backgroundColor: '#f8f7f4',
+    scale: 2,
+    useCORS: true,
+    logging: false
+  }).then(canvas => {
+    const url = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url; a.download = 'geomap-discourseLens.png'; a.click();
+  });
+}
+
+function exportGeoJSON(){
+  if(!lastGeo.length){ alert('Deteksi wilayah dulu.'); return; }
+  const geojson = {
+    type: 'FeatureCollection',
+    metadata: {
+      title: 'DiscourseLens — Sebaran Geografis',
+      generated: new Date().toLocaleString('id-ID'),
+      total_locations: lastGeo.length
+    },
+    features: lastGeo.map(([place, count]) => {
+      const coords = GEO_ID[place];
+      return {
+        type: 'Feature',
+        properties: { name: place, frequency: count },
+        geometry: coords
+          ? { type:'Point', coordinates:[parseFloat(coords[1]),parseFloat(coords[0])] }
+          : null
+      };
+    })
+  };
+  const blob = new Blob([JSON.stringify(geojson, null, 2)],
+                        {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'geomap-discourseLens.geojson'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ═══════════════════════════════════════════════════════
